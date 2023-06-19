@@ -3,9 +3,14 @@ import random
 import sqlite3
 import datetime
 from telebot import types
-print('start bot')
+import os
+from dotenv import load_dotenv,find_dotenv
 
-bot = telebot.TeleBot('6199788488:AAFQt9ndMV1AL5lAuxnA0WZ5v3lUtAtgB9A')
+load_dotenv(find_dotenv())
+
+print('bot is activated 🗸')
+
+bot = telebot.TeleBot(os.getenv('TOKEN'))
 
 connect = sqlite3.connect('friendMe.db', check_same_thread=False)
 
@@ -73,8 +78,7 @@ def start(message):
     start_button1 = types.KeyboardButton('🖼️ МОИ ФОТО')
     start_button2 = types.KeyboardButton('📨 ОБРАТНАЯ СВЯЗЬ')
     start_button3 = types.KeyboardButton('⛓️ ОТПРАВИТЬ ССЫЛКУ ДРУГУ')
-    test_bd =types.InlineKeyboardButton('ТЕСТ MYSQL')
-    markup.add(start_button1,start_button2,start_button3,test_bd)
+    markup.add(start_button1,start_button2,start_button3)
 
     reg_user(message.from_user.id, message.from_user.username, ref_id)
 
@@ -106,8 +110,6 @@ def chat_message(message):
         item3 = types.InlineKeyboardButton(text='Показать ссылку в чате',callback_data='share3')
         markup.add(item1,item2,item3)
         bot.send_message(message.chat.id,'<b>⤴️Поделиться с друзьями удобным для вас способом:</b>',parse_mode='html',reply_markup=markup)
-    elif message.text == 'ТЕСТ MYSQL':
-       pass
 
 @bot.message_handler(content_types=['photo'])
 def photo(message):
