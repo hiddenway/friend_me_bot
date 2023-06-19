@@ -3,7 +3,7 @@ import random
 import sqlite3
 import datetime
 from telebot import types
-
+print('start bot')
 
 bot = telebot.TeleBot('6199788488:AAFQt9ndMV1AL5lAuxnA0WZ5v3lUtAtgB9A')
 
