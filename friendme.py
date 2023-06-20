@@ -153,7 +153,7 @@ def photo(message):
 
 @bot.callback_query_handler(func=lambda callback:callback.data)
 def callback_my_photo(callback):
-    User = auth_user(callback.from_user.id, callback.from_user.username)
+    User = auth_user(callback.message.chat.id, callback.from_user.username)
 
     if callback.data == 'itemmyphoto1':
         bot.send_message(callback.message.chat.id,'b1')
@@ -164,7 +164,7 @@ def callback_my_photo(callback):
     elif callback.data == 'share2':
         bot.send_message(callback.message.chat.id, '2')
     elif callback.data == 'share3':
-        bot.send_message(callback.message.chat.id,f'https://t.me/Friend_Me_bot?start={callback.from_user.id}')
+        bot.send_message(callback.message.chat.id,f'https://t.me/Friend_Me_bot?start={callback.message.chat.id}')
 
 def error_command (chat_id:numbers):
     return bot.send_message(chat_id,'<b>⛔ Произошла ошибка, данная команда недоступна!</b>',parse_mode='html')
