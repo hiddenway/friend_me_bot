@@ -164,7 +164,7 @@ def callback_my_photo(callback):
     elif callback.data == 'share2':
         bot.send_message(callback.message.chat.id, '2')
     elif callback.data == 'share3':
-        bot.send_message(callback.message.chat.id,f'https://t.me/Friend_Me_bot?start={callback.message.from_user.id}')
+        bot.send_message(callback.message.chat.id,f'https://t.me/Friend_Me_bot?start={callback.from_user.id}')
 
 def error_command (chat_id:numbers):
     return bot.send_message(chat_id,'<b>⛔ Произошла ошибка, данная команда недоступна!</b>',parse_mode='html')
