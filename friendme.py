@@ -72,7 +72,7 @@ def start(message):
     if len(ref_id_arr) > 1:
         ref_id = ref_id_arr[1]
         print("кто пригласил:", ref_id)
-            
+
 
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True,row_width=2)
     start_button1 = types.KeyboardButton('🖼️ МОИ ФОТО')
@@ -121,11 +121,12 @@ def photo(message):
     from_id = message.from_user.id
 
     cursor = connect.cursor()
-    cursor.execute("INSERT INTO images VALUES(?,?,?,?,?);", (None, image_id, from_id, admin_id, date_image))
+    cursor.execute("INSERT INTO images VALUES(?,?,?,?,?);", (None, image_id, from_id, ref_id, date_image))
     connect.commit()
 
     cursor.execute(f"SELECT * FROM images WHERE id={cursor.lastrowid}")
     data = cursor.fetchall()
+    cursor.execute(f"SELECT ref_id FROM images WHERE ref_id ={ref_id}")
 
     get_receiver_id = data[0][3]
     get_image_id = data[0][1]
