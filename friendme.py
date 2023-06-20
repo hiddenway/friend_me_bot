@@ -48,7 +48,7 @@ def init_bot():
 init_bot()
 
 
-def reg_user(chat_id, username, ref_id=None):
+def auth_user(chat_id, username, ref_id=None):
 
     cursor = connect.cursor()
     cursor.execute(f"SELECT tg_id FROM users WHERE tg_id={chat_id}")
@@ -58,21 +58,29 @@ def reg_user(chat_id, username, ref_id=None):
         cursor.execute("INSERT INTO users VALUES(?,?,?,?,?);", (None, chat_id, username, ref_id, datetime.datetime.now()))
         connect.commit()
     else:
-        cursor.execute(f"UPDATE users SET ref_id='{ref_id}' WHERE tg_id={chat_id}")
-        connect.commit()
+        if ref_id is not None:
+            cursor.execute(f"UPDATE users SET ref_id='{ref_id}' WHERE tg_id={chat_id}")
+            connect.commit()
+
+    cursor.execute(f"SELECT * FROM users WHERE tg_id={chat_id}")
+    User = cursor.fetchone()
+
+    print("User Data: ", User)
+
+    return User
 
 #Меню Старт
 @bot.message_handler(commands=['start'])
 def start(message):
 
     ref_id = None
-    
     ref_id_arr = (message.text).split(' ')
 
     if len(ref_id_arr) > 1:
         ref_id = ref_id_arr[1]
         print("кто пригласил:", ref_id)
 
+    User = auth_user(message.from_user.id, message.from_user.username, ref_id)
 
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True,row_width=2)
     start_button1 = types.KeyboardButton('🖼️ МОИ ФОТО')
@@ -80,14 +88,11 @@ def start(message):
     start_button3 = types.KeyboardButton('⛓️ ОТПРАВИТЬ ССЫЛКУ ДРУГУ')
     markup.add(start_button1,start_button2,start_button3)
 
-    reg_user(message.from_user.id, message.from_user.username, ref_id)
-
     bot.send_message(message.chat.id,'<b>Приветствуем тебя дорогой друг!👋</b>\nС помощью нашего бота ты можешь со всех своих друзей собрать совместные фото и видео с тобой и вспомнить забытые и смешные моменты!\n\nКак это работает:\n1️⃣Нажмите кнопку в меню "отправить ссылку другу"\n2️⃣Выберите "Поделиться историей Instagram"\n3️⃣﻿﻿Добавьте себе историю в инстаграм как указано инструкции по кнопке\n4️⃣Все фото которые отправят друзья мы будем отображать в разделе "Мои фото"\n\nКак только кто-то из твоих друзей отправит что-то по ссылке мы обязательно тебе об этом скажем😊',parse_mode='html',reply_markup=markup)
 
 @bot.message_handler(content_types=['text'])
 def chat_message(message):
-
-    reg_user(message.from_user.id, message.from_user.username)
+    User = auth_user(message.from_user.id, message.from_user.username)
 
     if message.text == '🖼️ МОИ ФОТО':
         markup = types.InlineKeyboardMarkup(row_width=2)
@@ -113,29 +118,42 @@ def chat_message(message):
 
 @bot.message_handler(content_types=['photo'])
 def photo(message):
-    reg_user(message.from_user.id, message.from_user.username)
 
-    # Получаем id фотографии
-    image_id = message.photo[-1].file_id
-    date_image = datetime.datetime.now()
-    from_id = message.from_user.id
+    #Получаем данные пользователя из БД, если их нету то создаём
+    User = auth_user(message.from_user.id, message.from_user.username)
 
-    cursor = connect.cursor()
-    cursor.execute("INSERT INTO images VALUES(?,?,?,?,?);", (None, image_id, from_id, ref_id, date_image))
-    connect.commit()
+    #Получаем id пользователя который отправил ссылку
+    ref_id = User[3]
 
-    cursor.execute(f"SELECT * FROM images WHERE id={cursor.lastrowid}")
-    data = cursor.fetchall()
-    cursor.execute(f"SELECT ref_id FROM images WHERE ref_id ={ref_id}")
+    if ref_id == "None":
+        return error_command(User[1])
+    else:
+        # Получаем id фотографии
+        image_id = message.photo[-1].file_id
+        date_image = datetime.datetime.now()
+        from_id = message.from_user.id
 
-    get_receiver_id = data[0][3]
-    get_image_id = data[0][1]
+        #Добавляем фотографию в базу данных
+        cursor = connect.cursor()
+        cursor.execute("INSERT INTO images VALUES(?,?,?,?,?);", (None, image_id, from_id, ref_id, date_image))
+        connect.commit()
 
-    bot.send_photo(get_receiver_id, get_image_id)
+        #Получаем id пользователя которому отправили ссылку
+        cursor.execute(f"SELECT * FROM images WHERE id={cursor.lastrowid}")
+        data = cursor.fetchone()
+
+        get_receiver_id = data[3]
+        get_image_id = data[1]
+
+        #Отправляем фотографию пользователю
+
+        print("Отправляем фотографию пользователю: ", get_receiver_id)
+
+        bot.send_photo(get_receiver_id, get_image_id)
 
 @bot.callback_query_handler(func=lambda callback:callback.data)
 def callback_my_photo(callback):
-    reg_user(callback.from_user.id, callback.from_user.username)
+    User = auth_user(callback.from_user.id, callback.from_user.username)
 
     if callback.data == 'itemmyphoto1':
         bot.send_message(callback.message.chat.id,'b1')
@@ -148,6 +166,7 @@ def callback_my_photo(callback):
     elif callback.data == 'share3':
         bot.send_message(callback.message.chat.id,f'https://t.me/Friend_Me_bot?start={callback.message.from_user.id}')
 
-
+def error_command (chat_id:numbers):
+    return bot.send_message(chat_id,'<b>⛔ Произошла ошибка, данная команда недоступна!</b>',parse_mode='html')
 
 bot.polling(none_stop=True)
