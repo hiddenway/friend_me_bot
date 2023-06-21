@@ -57,6 +57,7 @@ def auth_user(chat_id, username, ref_id=None):
     if data is None:
         cursor.execute("INSERT INTO users VALUES(?,?,?,?,?);", (None, chat_id, username, ref_id, datetime.datetime.now()))
         connect.commit()
+
     else:
         if ref_id is not None:
             cursor.execute(f"UPDATE users SET ref_id='{ref_id}' WHERE tg_id={chat_id}")
@@ -73,27 +74,35 @@ def auth_user(chat_id, username, ref_id=None):
 @bot.message_handler(commands=['start'])
 def start(message):
 
-    ref_id = None
-    ref_id_arr = (message.text).split(' ')
-
-    if len(ref_id_arr) > 1:
-        ref_id = ref_id_arr[1]
-        print("кто пригласил:", ref_id)
-
-    User = auth_user(message.from_user.id, message.from_user.username, ref_id)
-
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True,row_width=2)
     start_button1 = types.KeyboardButton('🖼️ МОИ ФОТО')
     start_button2 = types.KeyboardButton('📨 ОБРАТНАЯ СВЯЗЬ')
     start_button3 = types.KeyboardButton('⛓️ ОТПРАВИТЬ ССЫЛКУ ДРУГУ')
     markup.add(start_button1,start_button2,start_button3)
 
-    bot.send_message(message.chat.id,'<b>Приветствуем тебя дорогой друг!👋</b>\nС помощью нашего бота ты можешь со всех своих друзей собрать совместные фото и видео с тобой и вспомнить забытые и смешные моменты!\n\nКак это работает:\n1️⃣Нажмите кнопку в меню "отправить ссылку другу"\n2️⃣Выберите "Поделиться историей Instagram"\n3️⃣﻿﻿Добавьте себе историю в инстаграм как указано инструкции по кнопке\n4️⃣Все фото которые отправят друзья мы будем отображать в разделе "Мои фото"\n\nКак только кто-то из твоих друзей отправит что-то по ссылке мы обязательно тебе об этом скажем😊',parse_mode='html',reply_markup=markup)
+    ref_id = None
+    ref_id_arr = (message.text).split(' ')
+    witch_ref_link = False
+
+    if len(ref_id_arr) > 1:
+        ref_id = ref_id_arr[1]
+        print("кто пригласил:", ref_id)
+        witch_ref_link = True
+
+    User = auth_user(message.from_user.id, message.from_user.username, ref_id)
+
+    if witch_ref_link == True:
+        markup = types.InlineKeyboardMarkup()
+        linkbutton = types.InlineKeyboardButton(text='❌ Отмена' ,callback_data='call_linkbutton')
+        markup.add(linkbutton)
+        bot.send_message(message.chat.id, f'<b>Приветствуем тебя дорогой друг!👋</b>\nС помощью нашего бота ты можешь со всех своих друзей собрать совместные фото и видео с тобой и вспомнить забытые и смешные моменты!\n\nКак это работает:\n1️⃣Нажмите кнопку в меню "отправить ссылку другу"\n2️⃣Выберите "Поделиться историей Instagram"\n3️⃣﻿﻿Добавьте себе историю в инстаграм как указано инструкции по кнопке\n4️⃣Все фото которые отправят друзья мы будем отображать в разделе "Мои фото"\n\nКак только кто-то из твоих друзей отправит что-то по ссылке мы обязательно тебе об этом скажем😊\n\n\n<b>Ты перешёл по ссылке "{User[2]}" отправь сюда в чат ваши совместные фото, мы их перешлём к "{User[2]}", но чтобы он что-то увидел, ему нужно будет обязательно чем-то поделиться с тобой в ответ 🙂</b>',parse_mode='html',reply_markup=markup)
+    else:
+        bot.send_message(message.chat.id, '<b>Приветствуем тебя дорогой друг!👋</b>\nС помощью нашего бота ты можешь со всех своих друзей собрать совместные фото и видео с тобой и вспомнить забытые и смешные моменты!\n\nКак это работает:\n1️⃣Нажмите кнопку в меню "отправить ссылку другу"\n2️⃣Выберите "Поделиться историей Instagram"\n3️⃣﻿﻿Добавьте себе историю в инстаграм как указано инструкции по кнопке\n4️⃣Все фото которые отправят друзья мы будем отображать в разделе "Мои фото"\n\nКак только кто-то из твоих друзей отправит что-то по ссылке мы обязательно тебе об этом скажем😊',parse_mode='html',reply_markup=markup)
 
 @bot.message_handler(content_types=['text'])
 def chat_message(message):
     User = auth_user(message.from_user.id, message.from_user.username)
-
+    ref_id = message.chat.id
     if message.text == '🖼️ МОИ ФОТО':
         markup = types.InlineKeyboardMarkup(row_width=2)
         item_my_photo1 = types.InlineKeyboardButton(text='Отправить в ответ',callback_data='itemmyphoto1')
@@ -111,7 +120,7 @@ def chat_message(message):
     elif message.text == '⛓️ ОТПРАВИТЬ ССЫЛКУ ДРУГУ':
         markup = types.InlineKeyboardMarkup(row_width=1)
         item1 = types.InlineKeyboardButton(text='Поделиться в Instagram Stories',callback_data='share1')
-        item2 = types.InlineKeyboardButton(text='Поделиться в Telegram',callback_data='share2')
+        item2 = types.InlineKeyboardButton('Поділитися',switch_inline_query=f'\n\nhttps://t.me/Friend_Me_bot?start={ref_id}')
         item3 = types.InlineKeyboardButton(text='Показать ссылку в чате',callback_data='share3')
         markup.add(item1,item2,item3)
         bot.send_message(message.chat.id,'<b>⤴️Поделиться с друзьями удобным для вас способом:</b>',parse_mode='html',reply_markup=markup)
@@ -146,8 +155,8 @@ def photo(message):
         get_image_id = data[1]
 
         #Отправляем фотографию пользователю
-
-        print("Отправляем фотографию пользователю: ", get_receiver_id)
+        bot.send_message(message.chat.id,'✅ Фотография успешно отправлена')
+        #print("Отправляем фотографию пользователю:", get_receiver_id)
 
         bot.send_photo(get_receiver_id, get_image_id)
 
@@ -164,7 +173,7 @@ def callback_my_photo(callback):
     elif callback.data == 'share1':
         bot.send_message(callback.message.chat.id, '1')
     elif callback.data == 'share2':
-        bot.send_message(callback.message.chat.id, '2')
+        bot.send_message(callback.message.chat.id,'')
     elif callback.data == 'share3':
         bot.send_message(callback.message.chat.id, f'https://t.me/Friend_Me_bot?start={ref_id}')
 
