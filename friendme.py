@@ -129,20 +129,40 @@ async def start(message):
 async def get_photo_user_album(chat_id):
     cursor = connect.cursor()
     
-    #GET ALL GROUPS ID
+    #SEND SINGLE PHOTO
 
-    cursor.execute("SELECT DISTINCT media_group_id FROM images WHERE to_id=?", (chat_id,))
+    cursor.execute("SELECT * FROM images WHERE to_id=?", (chat_id,))
+
+    if len(cursor.fetchall()) == 0:
+        await bot.send_message(chat_id, "Фото нет")
+        return
+
+    cursor.execute("SELECT id_image FROM images WHERE to_id=? AND media_group_id IS NULL", (chat_id,))
+    single_photo = cursor.fetchall()
+
+    if len(single_photo) != 0:
+        await bot.send_message(chat_id, "SINGLE:")
+
+        for photo_id in single_photo:
+            await bot.send_photo(chat_id, photo_id[0])
+
+    #SEND MULTI PHOTO
+    cursor.execute("SELECT DISTINCT media_group_id FROM images WHERE to_id=? AND media_group_id IS NOT NULL", (chat_id,))
     all_user_photo_groups = cursor.fetchall()
 
-    for group_id in all_user_photo_groups:
-        album = []
-        cursor.execute("SELECT id_image FROM images WHERE media_group_id=?", (group_id[0],))
-        images = cursor.fetchall()
+    if len(all_user_photo_groups) != 0:
 
-        for image_id in images:
-            album.append(types.InputMediaPhoto(image_id[0]))
+        await bot.send_message(chat_id, "MULTI:")
 
-        await bot.send_media_group(chat_id, album)
+        for group_id in all_user_photo_groups:
+            album = []
+            cursor.execute("SELECT id_image FROM images WHERE media_group_id=?", (group_id[0],))
+            images = cursor.fetchall()
+
+            for image_id in images:
+                album.append(types.InputMediaPhoto(image_id[0]))
+
+            await bot.send_media_group(chat_id, album)
 
 @bot.message_handler(content_types=['text'])
 async def chat_message(message):
@@ -218,12 +238,15 @@ async def photo(message):
                 if len(data) <= 1:
                     await send_menu_message(message.chat.id, "✅ Вы успешно отправили фотографии!")
 
-                    await bot.send_message(message.chat.id, f"👀 Для просмотра данных фотографий вашему другу потребуется отправить в ответ какие-то фотографии с вами, после чего мы обязательно сообщим вам и порадуем вас фото :) \n\nЧтобы отправить ещё что-то пользователю <b>«{friendUser[2]}»</b> нажмите кнопку ниже <b>«Отправить ещё»</b>", reply_markup=markup, parse_mode='html')
+                    await bot.send_message(message.chat.id, f"👀 Для просмотра данных фотографий вашему другу потребуется отправить в ответ какие-то фотографии с вами, после чего мы обязательно их перешлем вам :) \n\nЧтобы отправить ещё что-то пользователю <b>«{friendUser[2]}»</b> нажмите кнопку ниже <b>«Отправить ещё»</b>", reply_markup=markup, parse_mode='html')
 
                     cursor.execute("UPDATE users SET ref_id=? WHERE tg_id=?", (None, User[1], ))
                     connect.commit()
         else:
             await send_menu_message(message.chat.id, "✅ Вы успешно отправили фотографию!")
+
+            await bot.send_message(message.chat.id, f"👀 Для просмотра данных фотографий вашему другу потребуется отправить в ответ какие-то фотографии с вами, после чего мы обязательно их перешлем вам  :) \n\nЧтобы отправить ещё что-то пользователю <b>«{friendUser[2]}»</b> нажмите кнопку ниже <b>«Отправить ещё»</b>", reply_markup=markup, parse_mode='html')
+
             cursor.execute("UPDATE users SET ref_id=? WHERE tg_id=?", (None, User[1], ))
             connect.commit()
 
