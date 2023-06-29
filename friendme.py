@@ -9,7 +9,6 @@ from dotenv import load_dotenv,find_dotenv
 import asyncio
 
 load_dotenv(find_dotenv())
-
 print('bot is activated 🗸')
 
 bot = AsyncTeleBot(os.getenv('TOKEN'))
@@ -177,7 +176,7 @@ async def chat_message(message):
     elif message.text == '📨 Обратная связь':
         markup_info = types.InlineKeyboardMarkup(row_width=2)
         item_info1 = types.InlineKeyboardButton(text='📬 Support',callback_data='instagram_info',url='https://t.me/friendme_support')
-        item_info2 = types.InlineKeyboardButton(text='📢 Telegram Group', callback_data='twitter_info',url='https://twitter.com/')
+        item_info2 = types.InlineKeyboardButton(text='📢 Telegram Group', callback_data='twitter_info',url='https://t.me/+jXQVsce2gYVjZTgy')
         markup_info.add(item_info1,item_info2)
         await bot.send_message(message.chat.id,'<b>Обратная связь</b>\n\nВ случае неисправности бота или зафиксированной ошибке , просьба обратится в нашу тех-поддержу по адресу : @friendme_support\n\nТак же если у вас сеть предложения для улучшения нашего сервиса ,можете обратиться по адресу : @friendme_offers\n\n<b>FriendMe в социальных сетях:</b>',parse_mode='html',reply_markup=markup_info)
     elif message.text == '📸 Собрать фото с друзей':
@@ -287,30 +286,63 @@ async def callback_my_photo(callback):
         await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.id,text=f'📸 Пользователь {callback.message.from_user.first_name} отправил вам 10 фотографий и 2 видео:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
     elif callback.data == 'share1':
         markup = types.InlineKeyboardMarkup()
-        item_next = types.InlineKeyboardButton(text='Далее',callback_data='item_next1')
+        item_next = types.InlineKeyboardButton(text='Начать',callback_data='item_next1')
         markup.add(item_next)
         image = open('images/inst.jpg', 'rb')
+        await bot.send_message(callback.message.chat.id,'<b>Чтобы выложить историю в инстаграм как показано ниже, сделайте 3 простых шага:</b>',parse_mode='html',reply_markup=markup)
         await bot.send_photo(callback.message.chat.id, image)
-        await bot.send_message(callback.message.chat.id,'Для того чтобы корректно выложить историю с ссылкой в <b>Instagram stories</b>,вам потребуется выполнить 3 простых действия и ждите океан фото от своих друзей 😁',parse_mode='html',reply_markup=markup)
     elif callback.data == 'share2':
         await bot.send_message(callback.message.chat.id,'')
     elif callback.data == 'share3':
         await bot.send_message(callback.message.chat.id, f'https://t.me/{bot_name}?start={ref_id}')
     elif callback.data == 'item_next1':
+        media = types.InputMediaPhoto(open("friendme_logo.jpg", "rb"))
         markup = types.InlineKeyboardMarkup()
+        item_back = types.InlineKeyboardButton(text='Назад',callback_data='item_back2')
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_next2')
+        markup.add(item_back,item_next)
+        await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.message_id, text="1️⃣<b>Скачайте изображение которое мы отправили ниже:</b>",parse_mode='html',reply_markup=markup)
+        await bot.edit_message_media(media,chat_id=callback.message.chat.id,message_id=callback.message.message_id)
+    elif callback.data == 'item_back2':
+        markup = types.InlineKeyboardMarkup()
+        item_next = types.InlineKeyboardButton(text='Начать', callback_data='item_next1')
         markup.add(item_next)
-        await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.message_id, text="1️⃣Скачайте фотографию которую мы отправили ниже, после нажмите далее",reply_markup=markup)
+        await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.message_id,text="<b>Чтобы выложить историю в инстаграм как показано ниже, сделайте 3 простых шага:</b>", parse_mode='html',reply_markup=markup)
     elif callback.data == 'item_next2':
         markup = types.InlineKeyboardMarkup()
+        item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back3')
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_next3')
-        markup.add(item_next)
-        await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.message_id,text="2️⃣Откройте вкладку истории и загрузите это фото, после нажмите далее",reply_markup=markup)
+        markup.add(item_back,item_next)
+        await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.message_id,text="2️⃣<b>Загрузите изображение в инстаграм сторис:</b>",parse_mode='html',reply_markup=markup)
+    elif callback.data == 'item_back3':
+        markup = types.InlineKeyboardMarkup()
+        item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back2')
+        item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_next2')
+        markup.add(item_back, item_next)
+        await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.message_id,text="1️⃣<b>Скачайте изображение которое мы отправили ниже:</b>", parse_mode='html',reply_markup=markup)
     elif callback.data == 'item_next3':
         markup = types.InlineKeyboardMarkup()
-        item_next = types.InlineKeyboardButton(text='Поделиться', callback_data='item_share4')
-        markup.add(item_next)
-        await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.message_id,text=f"3️⃣Добавьте ссылку которую мы отправили ниже в рамку посередине как на скриншоте⤵️\n\nhttps://t.me/{bot_name}?start={ref_id}",reply_markup=markup)
+        item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back4')
+        item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_share4')
+        markup.add(item_back,item_next)
+        await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.message_id,text=f"3️⃣<b>Добавьте стикер с уникальной ссылкой:</b>⤵️\n\nhttps://t.me/{bot_name}?start={ref_id}",parse_mode='html',reply_markup=markup)
+    elif callback.data == 'item_back4':
+        markup = types.InlineKeyboardMarkup()
+        item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back3')
+        item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_next3')
+        markup.add(item_back, item_next)
+        await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.message_id,text="2️⃣<b>Загрузите изображение в инстаграм сторис:</b>", parse_mode='html',reply_markup=markup)
+    elif callback.data == 'item_share4':
+        markup = types.InlineKeyboardMarkup()
+        item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back5')
+        markup.add(item_back)
+        await bot.edit_message_text(chat_id=callback.message.chat.id,message_id=callback.message.message_id,text='🎉 <b>Поздравляем! Вы поделились ссылкой с друзьями, теперь осталось подождать пока кто-то отправит какие-то фотографии по вашей ссылке :)</b>',parse_mode='html',reply_markup=markup)
+    elif callback.data == 'item_back5':
+        markup = types.InlineKeyboardMarkup()
+        item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back4')
+        item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_share4')
+        markup.add(item_back, item_next)
+        await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.message_id,text=f"3️⃣<b>Добавьте стикер с уникальной ссылкой:</b>⤵️\n\nhttps://t.me/{bot_name}?start={ref_id}",parse_mode='html', reply_markup=markup)
 
 async def error_command (chat_id):
     return await bot.send_message(chat_id,'<b>⛔ Произошла ошибка, данная команда недоступна!</b>',parse_mode='html')
