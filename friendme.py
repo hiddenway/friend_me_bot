@@ -11,7 +11,7 @@ import asyncio
 load_dotenv(find_dotenv())
 print('bot is activated 🗸')
 
-bot = AsyncTeleBot(os.getenv('TOKEN'))
+bot = AsyncTeleBot(os.getenv('BOT_TOKEN'))
 connect = sqlite3.connect('friendMe.db', check_same_thread=False)
 bot_name = "Friend_Me_bot"
 admin_id = 1900666417

@@ -4,7 +4,7 @@ services:
       dockerfile: "Dockerfile"
     ports:
       - "8000:5000"
-    # environment:
-    #   - TOKEN=6199788488
+    environment:
+      - BOT_TOKEN
     volumes:
       - ./:/root/app:cached
