@@ -16,7 +16,7 @@ jobs:
     - name: Environment Var Init
       run: |
         echo "
-        BOT_TOKEN: ${{secrets.WEB_APP_BOT_TOKEN_DEV}}" > .env
+        BOT_TOKEN: ${{secrets.BOT_TOKEN_MAIN}}" > .env
     - name: Deploy FriendMe Bot Container
       run: |
         docker compose up friend_me_bot -d
