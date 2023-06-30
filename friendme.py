@@ -111,6 +111,8 @@ async def clear(message):
 @bot.message_handler(commands=['start'])
 async def start(message):
 
+    print("TESTING /START")
+
     firstStart = False
     ref_id = None
     ref_id_arr = (message.text).split(' ')
