@@ -17,6 +17,6 @@ jobs:
       run: |
         echo "
         BOT_TOKEN: ${{secrets.WEB_APP_BOT_TOKEN_DEV}}" > .env
-    - name: Deploy YELOO API (DEV) Server Container
+    - name: Deploy FriendMe Bot Container
       run: |
         docker compose up friend_me_bot -d
