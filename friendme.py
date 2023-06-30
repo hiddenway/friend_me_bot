@@ -19,6 +19,7 @@ admin_id2 = 522380141
 
 #STATUS: 10 - default user | 20 - admin | 30 - blocked
 
+
 def init_bot():
     
     cursor = connect.cursor()
