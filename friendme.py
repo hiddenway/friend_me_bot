@@ -15,6 +15,7 @@ bot = AsyncTeleBot(os.getenv('TOKEN'))
 connect = sqlite3.connect('friendMe.db', check_same_thread=False)
 bot_name = "Friend_Me_bot"
 admin_id = 1900666417
+admin_id2 = 522380141
 
 
 def init_bot():
@@ -77,19 +78,20 @@ def auth_user(chat_id, username, ref_id=None):
 #Очистить БД
 @bot.message_handler(commands=['clear'])
 async def clear(message):
-    print("CLEAR DB")
-    cursor = connect.cursor()
+    if message.chat.id == admin_id:
+        print("CLEAR DB")
+        cursor = connect.cursor()
 
-    cursor.execute("DROP TABLE IF EXISTS users")
-    connect.commit()
+        cursor.execute("DROP TABLE IF EXISTS users")
+        connect.commit()
 
-    cursor.execute("DROP TABLE IF EXISTS images")
-    connect.commit()
+        cursor.execute("DROP TABLE IF EXISTS images")
+        connect.commit()
 
-    await bot.send_message(message.chat.id, "Clear DB Success")
-
+        await bot.send_message(message.chat.id, "🗑 Clear DB Success")
+    else:
+        await bot.send_message(message.chat.id, "🔒 You are not admin")
     init_bot()
-
 #Меню Старт
 @bot.message_handler(commands=['start'])
 async def start(message):
@@ -118,7 +120,7 @@ async def start(message):
     else:
         await send_menu_message(message.chat.id, '<b>Приветствуем тебя дорогой друг!👋</b>\nС помощью нашего бота ты можешь со всех своих друзей собрать совместные фото и видео с тобой и вспомнить забытые и смешные моменты!\n\n<b>Как это работает:</b>\n1️⃣Нажмите кнопку в меню "Собрать фото с друзей"\n2️⃣Выберите "Поделиться историей Instagram"\n3️⃣﻿﻿Добавьте себе историю в инстаграм как указано инструкции по кнопке\n4️⃣Все фото которые отправят друзья мы будем отображать в разделе "Мои фото"\n\nКак только кто-то из твоих друзей отправит что-то по ссылке мы обязательно тебе об этом скажем😊')
 
-async def get_photo_user_album(chat_id):
+async def get_photo_user_album(chat_id,from_id):
     cursor = connect.cursor()
     
     #SEND SINGLE PHOTO
@@ -132,11 +134,16 @@ async def get_photo_user_album(chat_id):
     cursor.execute("SELECT id_image FROM images WHERE to_id=? AND media_group_id IS NULL", (chat_id,))
     single_photo = cursor.fetchall()
 
+    cursor.execute("SELECT from_id FROM images WHERE from_id=?",(from_id))
+    from_id = cursor.fetchone()
     if len(single_photo) != 0:
         await bot.send_message(chat_id, "SINGLE:")
 
         for photo_id in single_photo:
-            await bot.send_photo(chat_id, photo_id[0])
+            markup = types.InlineKeyboardMarkup()
+            item1 = types.InlineKeyboardButton(text='Отправить в ответ',callback_data='item1_single')
+            markup.add(item1)
+            await bot.send_photo(chat_id, photo_id[0],caption=f'📸 Пользователь {from_id} поделился с вами фотографиями:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
 
     #SEND MULTI PHOTO
     cursor.execute("SELECT DISTINCT media_group_id FROM images WHERE to_id=? AND media_group_id IS NOT NULL", (chat_id,))
@@ -154,7 +161,8 @@ async def get_photo_user_album(chat_id):
             for image_id in images:
                 album.append(types.InputMediaPhoto(image_id[0]))
 
-            await bot.send_media_group(chat_id, album)
+            #await bot.send_media_group(chat_id, album)
+
 
 @bot.message_handler(content_types=['text'])
 async def chat_message(message):
@@ -166,13 +174,14 @@ async def chat_message(message):
 
     ref_id = message.chat.id
     if message.text == '🌁 Фото со мной':
-        # markup = types.InlineKeyboardMarkup(row_width=2)
-        # item_my_photo1 = types.InlineKeyboardButton(text='Отправить в ответ',callback_data='itemmyphoto1')
-        # item_my_photo2 = types.InlineKeyboardButton(text='Далее',callback_data='itemmyphoto2')
-        # item_my_photo3 = types.InlineKeyboardButton(text='Назад',callback_data='itemmyphoto2')
-        # markup.add(item_my_photo3,item_my_photo2,item_my_photo1)
-        # await bot.send_message(message.chat.id,f'📸 Пользователь {message.from_user.first_name} отправил вам 10 фотографий и 2 видео:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
         await get_photo_user_album(message.chat.id)
+         #markup = types.InlineKeyboardMarkup(row_width=2)
+         #item_my_photo1 = types.InlineKeyboardButton(text='Отправить в ответ',callback_data='itemmyphoto1')
+         #item_my_photo2 = types.InlineKeyboardButton(text='Далее',callback_data='itemmyphoto2')
+         #item_my_photo3 = types.InlineKeyboardButton(text='Назад',callback_data='itemmyphoto2')
+         #markup.add(item_my_photo1)
+         #await bot.send_message(message.chat.id,f'📸 Пользователь {message.from_user.first_name} поделился с вами фотограиями:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"')
+
     elif message.text == '📨 Обратная связь':
         markup_info = types.InlineKeyboardMarkup(row_width=2)
         item_info1 = types.InlineKeyboardButton(text='📬 Support',callback_data='instagram_info',url='https://t.me/friendme_support')
@@ -269,7 +278,8 @@ async def callback_my_photo(callback):
     ref_id = callback.message.chat.id
 
     if callback.data == 'itemmyphoto1':
-       pass
+       #await get_photo_user_album(callback.message.chat.id)
+        pass
     elif callback.data == 'itemmyphoto2':
         markup = types.InlineKeyboardMarkup(row_width=2)
         item_my_photo1 = types.InlineKeyboardButton(text='Отправить в ответ',callback_data='itemmyphoto1')
@@ -289,61 +299,73 @@ async def callback_my_photo(callback):
         item_next = types.InlineKeyboardButton(text='Начать',callback_data='item_next1')
         markup.add(item_next)
         image = open('images/inst.jpg', 'rb')
-        await bot.send_message(callback.message.chat.id,'<b>Чтобы выложить историю в инстаграм как показано ниже, сделайте 3 простых шага:</b>',parse_mode='html',reply_markup=markup)
-        await bot.send_photo(callback.message.chat.id, image)
+        await bot.send_photo(callback.message.chat.id,image,caption='Чтобы выложить историю в инстаграм как показано ниже, сделайте 3 простых шага:',reply_markup=markup)
     elif callback.data == 'share2':
         await bot.send_message(callback.message.chat.id,'')
     elif callback.data == 'share3':
         await bot.send_message(callback.message.chat.id, f'https://t.me/{bot_name}?start={ref_id}')
     elif callback.data == 'item_next1':
-        media = types.InputMediaPhoto(open("friendme_logo.jpg", "rb"))
+        media = open("img_inst.jpg", "rb")
         markup = types.InlineKeyboardMarkup()
         item_back = types.InlineKeyboardButton(text='Назад',callback_data='item_back2')
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_next2')
         markup.add(item_back,item_next)
-        await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.message_id, text="1️⃣<b>Скачайте изображение которое мы отправили ниже:</b>",parse_mode='html',reply_markup=markup)
-        await bot.edit_message_media(media,chat_id=callback.message.chat.id,message_id=callback.message.message_id)
+        await bot.edit_message_media(chat_id =callback.message.chat.id, message_id=callback.message.message_id, media=types.InputMediaPhoto(media))
+        await bot.edit_message_caption(chat_id=callback.message.chat.id, message_id=callback.message.message_id,caption="1️⃣Скачайте изображение которое мы отправили:",reply_markup=markup)
     elif callback.data == 'item_back2':
         markup = types.InlineKeyboardMarkup()
         item_next = types.InlineKeyboardButton(text='Начать', callback_data='item_next1')
         markup.add(item_next)
-        await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.message_id,text="<b>Чтобы выложить историю в инстаграм как показано ниже, сделайте 3 простых шага:</b>", parse_mode='html',reply_markup=markup)
+        media = open('images/inst.jpg', 'rb')
+        await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media))
+        await bot.edit_message_caption(chat_id=callback.message.chat.id, message_id=callback.message.message_id,caption='Чтобы выложить историю в инстаграм как показано ниже, сделайте 3 простых шага:', reply_markup=markup)
     elif callback.data == 'item_next2':
+        media = open('inst.jpg','rb')
         markup = types.InlineKeyboardMarkup()
         item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back3')
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_next3')
         markup.add(item_back,item_next)
-        await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.message_id,text="2️⃣<b>Загрузите изображение в инстаграм сторис:</b>",parse_mode='html',reply_markup=markup)
+        await bot.edit_message_media(chat_id =callback.message.chat.id, message_id=callback.message.message_id, media=types.InputMediaPhoto(media))
+        await bot.edit_message_caption(chat_id=callback.message.chat.id,message_id=callback.message.message_id,caption='2️⃣Загрузите изображение в инстаграм сторис:',reply_markup=markup)
     elif callback.data == 'item_back3':
         markup = types.InlineKeyboardMarkup()
         item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back2')
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_next2')
         markup.add(item_back, item_next)
-        await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.message_id,text="1️⃣<b>Скачайте изображение которое мы отправили ниже:</b>", parse_mode='html',reply_markup=markup)
+        media = open('images/img_inst.jpg', 'rb')
+        await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media))
+        await bot.edit_message_caption(chat_id=callback.message.chat.id, message_id=callback.message.message_id,caption='️1️⃣Скачайте изображение которое мы отправили:',reply_markup=markup)
     elif callback.data == 'item_next3':
+        media = open('img_inst.jpg','rb')
         markup = types.InlineKeyboardMarkup()
         item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back4')
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_share4')
         markup.add(item_back,item_next)
-        await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.message_id,text=f"3️⃣<b>Добавьте стикер с уникальной ссылкой:</b>⤵️\n\nhttps://t.me/{bot_name}?start={ref_id}",parse_mode='html',reply_markup=markup)
+        await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media))
+        await bot.edit_message_caption(chat_id=callback.message.chat.id, message_id=callback.message.message_id,caption=f"3️⃣Добавьте стикер с уникальной ссылкой:⤵️\n\nhttps://t.me/{bot_name}?start={ref_id}",reply_markup=markup)
     elif callback.data == 'item_back4':
         markup = types.InlineKeyboardMarkup()
         item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back3')
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_next3')
         markup.add(item_back, item_next)
-        await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.message_id,text="2️⃣<b>Загрузите изображение в инстаграм сторис:</b>", parse_mode='html',reply_markup=markup)
+        media = open('images/inst.jpg', 'rb')
+        await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media))
+        await bot.edit_message_caption(chat_id=callback.message.chat.id, message_id=callback.message.message_id,caption='️2️⃣Загрузите изображение в инстаграм сторис:',reply_markup=markup)
     elif callback.data == 'item_share4':
+        media = open('inst.jpg','rb')
         markup = types.InlineKeyboardMarkup()
         item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back5')
         markup.add(item_back)
-        await bot.edit_message_text(chat_id=callback.message.chat.id,message_id=callback.message.message_id,text='🎉 <b>Поздравляем! Вы поделились ссылкой с друзьями, теперь осталось подождать пока кто-то отправит какие-то фотографии по вашей ссылке :)</b>',parse_mode='html',reply_markup=markup)
+        await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media))
+        await bot.edit_message_caption(chat_id=callback.message.chat.id, message_id=callback.message.message_id,caption="🎉Поздравляем! Вы поделились ссылкой с друзьями, теперь осталось подождать пока кто-то отправит какие-то фотографии по вашей ссылке :)",reply_markup=markup)
     elif callback.data == 'item_back5':
         markup = types.InlineKeyboardMarkup()
         item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back4')
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_share4')
         markup.add(item_back, item_next)
-        await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.message_id,text=f"3️⃣<b>Добавьте стикер с уникальной ссылкой:</b>⤵️\n\nhttps://t.me/{bot_name}?start={ref_id}",parse_mode='html', reply_markup=markup)
-
+        media = open('images/img_inst.jpg','rb')
+        await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media))
+        await bot.edit_message_caption(chat_id=callback.message.chat.id, message_id=callback.message.message_id,caption=f"3️⃣Добавьте стикер с уникальной ссылкой:⤵️\n\nhttps://t.me/{bot_name}?start={ref_id}", reply_markup=markup)
 async def error_command (chat_id):
     return await bot.send_message(chat_id,'<b>⛔ Произошла ошибка, данная команда недоступна!</b>',parse_mode='html')
 
