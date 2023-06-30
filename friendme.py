@@ -13,7 +13,7 @@ print('bot is activated 🗸')
 
 bot = AsyncTeleBot(os.getenv('BOT_TOKEN'))
 connect = sqlite3.connect('friendMe.db', check_same_thread=False)
-bot_name = "Friend_Me_bot"
+bot_name = "test_friendme_bot"
 admin_id = 1900666417
 admin_id2 = 522380141
 
@@ -82,9 +82,9 @@ def auth_user(chat_id, username, ref_id=None):
 @bot.message_handler(commands=['clear'])
 async def clear(message):
 
-    current_user = get_user(message.chat.id)
 
-    if current_user[5] == 20:
+
+    if message.chat.id == admin_id:
         print("CLEAR DB")
         cursor = connect.cursor()
 
@@ -102,7 +102,6 @@ async def clear(message):
 
 # def validateUser(chat_id):
 #     current_user = get_user(chat_id)
-
 #     if current_user[5] == 30:
 #         bot.send_message(chat_id, "You are blocked! Huilo")
 #         return
@@ -181,8 +180,11 @@ async def get_photo_user_album(chat_id):
 
             for image_id in images:
                 album.append(types.InputMediaPhoto(image_id[0]))
-
-            #await bot.send_media_group(chat_id, album)
+                markup = types.InlineKeyboardMarkup()
+                item1 = types.InlineKeyboardButton(text='Отправить в ответ',url=f"https://t.me/{bot_name}?start={from_user_data[1]}")
+                markup.add(item1)
+                await bot.send_media_group(chat_id, album)
+                await  bot.send_message(chat_id,f'📸 Пользователь {from_user_data[2]} поделился с вами фотографиями:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
 
 
 @bot.message_handler(content_types=['text'])
@@ -250,24 +252,24 @@ async def photo(message):
 
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton(text='💬 Отправить ещё' , url=f"https://t.me/{bot_name}?start={friendUser[1]}"))
-
         #Проверяем буфер
+
+
         if media_group_id is not None:
                 cursor.execute("SELECT * FROM images WHERE media_group_id=?", (media_group_id, ))
                 data = cursor.fetchall()
-
                 print("MEDIA_GROUP:", len(data))
 
                 if len(data) <= 1:
                     await send_menu_message(message.chat.id, "✅ Вы успешно отправили фотографии!")
-
                     await bot.send_message(message.chat.id, f"👀 Для просмотра данных фотографий вашему другу потребуется отправить в ответ какие-то фотографии с вами, после чего мы обязательно их перешлем вам :) \n\nЧтобы отправить ещё что-то пользователю <b>«{friendUser[2]}»</b> нажмите кнопку ниже <b>«Отправить ещё»</b>", reply_markup=markup, parse_mode='html')
+                    await bot.send_message(ref_id,'💌 С вами поделились фотографиями\n\nДля того что бы их посмотреть зайдите в <b>🌁 Фото со мной</b>',parse_mode='html')
 
                     cursor.execute("UPDATE users SET ref_id=? WHERE tg_id=?", (None, User[1], ))
                     connect.commit()
         else:
             await send_menu_message(message.chat.id, "✅ Вы успешно отправили фотографию!")
-
+            await bot.send_message(ref_id,'💌 С вами поделились фотографиями\n\nДля того что бы их посмотреть зайдите в <b>🌁 Фото со мной</b>',parse_mode='html')
             await bot.send_message(message.chat.id, f"👀 Для просмотра данных фотографий вашему другу потребуется отправить в ответ какие-то фотографии с вами, после чего мы обязательно их перешлем вам  :) \n\nЧтобы отправить ещё что-то пользователю <b>«{friendUser[2]}»</b> нажмите кнопку ниже <b>«Отправить ещё»</b>", reply_markup=markup, parse_mode='html')
 
             cursor.execute("UPDATE users SET ref_id=? WHERE tg_id=?", (None, User[1], ))
@@ -327,7 +329,7 @@ async def callback_my_photo(callback):
     elif callback.data == 'share3':
         await bot.send_message(callback.message.chat.id, f'https://t.me/{bot_name}?start={ref_id}')
     elif callback.data == 'item_next1':
-        media = open("img_inst.jpg", "rb")
+        media = open("images/img_inst.jpg", "rb")
         markup = types.InlineKeyboardMarkup()
         item_back = types.InlineKeyboardButton(text='Назад',callback_data='item_back2')
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_next2')
@@ -342,7 +344,7 @@ async def callback_my_photo(callback):
         await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media))
         await bot.edit_message_caption(chat_id=callback.message.chat.id, message_id=callback.message.message_id,caption='Чтобы выложить историю в инстаграм как показано ниже, сделайте 3 простых шага:', reply_markup=markup)
     elif callback.data == 'item_next2':
-        media = open('inst.jpg','rb')
+        media = open('images/inst.jpg','rb')
         markup = types.InlineKeyboardMarkup()
         item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back3')
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_next3')
@@ -358,7 +360,7 @@ async def callback_my_photo(callback):
         await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media))
         await bot.edit_message_caption(chat_id=callback.message.chat.id, message_id=callback.message.message_id,caption='️1️⃣Скачайте изображение которое мы отправили:',reply_markup=markup)
     elif callback.data == 'item_next3':
-        media = open('img_inst.jpg','rb')
+        media = open('images/img_inst.jpg','rb')
         markup = types.InlineKeyboardMarkup()
         item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back4')
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_share4')
@@ -374,7 +376,7 @@ async def callback_my_photo(callback):
         await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media))
         await bot.edit_message_caption(chat_id=callback.message.chat.id, message_id=callback.message.message_id,caption='️2️⃣Загрузите изображение в инстаграм сторис:',reply_markup=markup)
     elif callback.data == 'item_share4':
-        media = open('inst.jpg','rb')
+        media = open('images/inst.jpg','rb')
         markup = types.InlineKeyboardMarkup()
         item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back5')
         markup.add(item_back)
