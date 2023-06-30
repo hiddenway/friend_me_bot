@@ -128,6 +128,7 @@ async def start(message):
     User = auth_user(message.from_user.id, message.from_user.username, ref_id)
 
     if User[3] is not None and ref_id == None:
+        print("ONLY PHOTO")
         await only_photo(User)
         return
 

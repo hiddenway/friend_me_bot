@@ -8,3 +8,6 @@ services:
       - BOT_TOKEN
     volumes:
       - ./:/root/app:cached
+
+volumes: 
+    db_data:
