@@ -18,6 +18,9 @@ admin_id = 1900666417
 admin_id2 = 522380141
 
 
+#STATUS: 10 - default user | 20 - admin | 30 - blocked
+
+
 def init_bot():
     
     cursor = connect.cursor()
@@ -27,7 +30,8 @@ def init_bot():
                tg_id integer,
                username varchar,
                ref_id number,
-               date date
+               date date,
+               status number
            )""")
     connect.commit()
 
@@ -60,7 +64,7 @@ def auth_user(chat_id, username, ref_id=None):
     data = cursor.fetchone()
 
     if data is None:
-        cursor.execute("INSERT INTO users VALUES(?,?,?,?,?);", (None, chat_id, username, ref_id, datetime.datetime.now()))
+        cursor.execute("INSERT INTO users VALUES(?,?,?,?,?,?);", (None, chat_id, username, ref_id, datetime.datetime.now(), 10))
         connect.commit()
 
     else:
@@ -78,7 +82,10 @@ def auth_user(chat_id, username, ref_id=None):
 #Очистить БД
 @bot.message_handler(commands=['clear'])
 async def clear(message):
-    if message.chat.id == admin_id:
+
+    current_user = get_user(message.chat.id)
+
+    if current_user[5] == 20:
         print("CLEAR DB")
         cursor = connect.cursor()
 
@@ -89,9 +96,19 @@ async def clear(message):
         connect.commit()
 
         await bot.send_message(message.chat.id, "🗑 Clear DB Success")
+
+        init_bot()
     else:
         await bot.send_message(message.chat.id, "🔒 You are not admin")
-    init_bot()
+
+# def validateUser(chat_id):
+#     current_user = get_user(chat_id)
+
+#     if current_user[5] == 30:
+#         bot.send_message(chat_id, "You are blocked! Huilo")
+#         return
+
+
 #Меню Старт
 @bot.message_handler(commands=['start'])
 async def start(message):
@@ -120,7 +137,7 @@ async def start(message):
     else:
         await send_menu_message(message.chat.id, '<b>Приветствуем тебя дорогой друг!👋</b>\nС помощью нашего бота ты можешь со всех своих друзей собрать совместные фото и видео с тобой и вспомнить забытые и смешные моменты!\n\n<b>Как это работает:</b>\n1️⃣Нажмите кнопку в меню "Собрать фото с друзей"\n2️⃣Выберите "Поделиться историей Instagram"\n3️⃣﻿﻿Добавьте себе историю в инстаграм как указано инструкции по кнопке\n4️⃣Все фото которые отправят друзья мы будем отображать в разделе "Мои фото"\n\nКак только кто-то из твоих друзей отправит что-то по ссылке мы обязательно тебе об этом скажем😊')
 
-async def get_photo_user_album(chat_id,from_id):
+async def get_photo_user_album(chat_id):
     cursor = connect.cursor()
     
     #SEND SINGLE PHOTO
@@ -131,19 +148,23 @@ async def get_photo_user_album(chat_id,from_id):
         await bot.send_message(chat_id, "Фото нет")
         return
 
-    cursor.execute("SELECT id_image FROM images WHERE to_id=? AND media_group_id IS NULL", (chat_id,))
+    cursor.execute("SELECT id_image, from_id FROM images WHERE to_id=? AND media_group_id IS NULL", (chat_id,))
     single_photo = cursor.fetchall()
 
-    cursor.execute("SELECT from_id FROM images WHERE from_id=?",(from_id))
-    from_id = cursor.fetchone()
+
     if len(single_photo) != 0:
         await bot.send_message(chat_id, "SINGLE:")
 
         for photo_id in single_photo:
+
+            # GET USERNAME WITH FROM_ID
+            from_user_data = get_user(photo_id[1])
+            
             markup = types.InlineKeyboardMarkup()
-            item1 = types.InlineKeyboardButton(text='Отправить в ответ',callback_data='item1_single')
+            item1 = types.InlineKeyboardButton(text='Отправить в ответ', url=f"https://t.me/{bot_name}?start={from_user_data[1]}")
             markup.add(item1)
-            await bot.send_photo(chat_id, photo_id[0],caption=f'📸 Пользователь {from_id} поделился с вами фотографиями:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
+
+            await bot.send_photo(chat_id, photo_id[0],caption=f'📸 Пользователь {from_user_data[2]} поделился с вами фотографиями:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
 
     #SEND MULTI PHOTO
     cursor.execute("SELECT DISTINCT media_group_id FROM images WHERE to_id=? AND media_group_id IS NOT NULL", (chat_id,))
@@ -155,6 +176,7 @@ async def get_photo_user_album(chat_id,from_id):
 
         for group_id in all_user_photo_groups:
             album = []
+
             cursor.execute("SELECT id_image FROM images WHERE media_group_id=?", (group_id[0],))
             images = cursor.fetchall()
 
@@ -166,6 +188,7 @@ async def get_photo_user_album(chat_id,from_id):
 
 @bot.message_handler(content_types=['text'])
 async def chat_message(message):
+
     User = auth_user(message.from_user.id, message.from_user.username)
 
     if User[3] is not None:
