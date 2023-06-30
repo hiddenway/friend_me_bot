@@ -1,0 +1,22 @@
+name: 'FRIENDME BOT - DEPLOY'
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: self-friend-bot
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Environment Var Init
+      run: |
+        echo "
+        BOT_TOKEN: ${{secrets.WEB_APP_BOT_TOKEN_DEV}}" > .env
+    - name: Deploy YELOO API (DEV) Server Container
+      run: |
+        docker compose up friend_me_bot -d
