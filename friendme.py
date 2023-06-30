@@ -17,7 +17,6 @@ bot_name = "Friend_Me_bot"
 admin_id = 1900666417
 admin_id2 = 522380141
 
-
 #STATUS: 10 - default user | 20 - admin | 30 - blocked
 
 
