@@ -7,8 +7,7 @@ from telebot import types
 import os
 from dotenv import load_dotenv,find_dotenv
 import asyncio
-from amplitude import Amplitude
-from amplitude import BaseEvent
+from amplitude import Amplitude, Identify, EventOptions, BaseEvent
 
 load_dotenv(find_dotenv())
 print('bot is activated 🗸')
@@ -17,12 +16,29 @@ print('bot is activated 🗸')
 amplitude = Amplitude(os.getenv('AMP_TOKEN'))
 bot = AsyncTeleBot(os.getenv('BOT_TOKEN'))
 connect = sqlite3.connect('friendMe.db', check_same_thread=False)
-bot_name = "test_friendme_bot"
+bot_name = os.getenv('bot_name')
 admin_id = 1900666417
 admin_id2 = 522380141
 
 #STATUS: 10 - default user | 20 - admin | 30 - blocked
 
+
+def amplitude_track(event_name, chat_id, event_props, user_props = None):
+
+    if user_props != None:
+        identify_obj= Identify()
+        for key, value in user_props.items():
+            identify_obj.add(key, value)
+            amplitude.identify(identify_obj, EventOptions(user_id=chat_id))
+
+    amplitude.track(
+        BaseEvent(
+            event_type=event_name,
+            device_id=None,
+            user_id=chat_id,
+            event_properties=event_props
+        )
+    )
 
 def init_bot():
 
@@ -67,6 +83,15 @@ def auth_user(chat_id, username, ref_id=None):
     data = cursor.fetchone()
 
     if data is None:
+
+        amplitude_track("new_user", chat_id, {
+            "from_user_id": ref_id
+        }, {
+            "username": username,
+            "first_from_id": ref_id,
+            "reg_time": datetime.datetime.now(),
+        })
+
         cursor.execute("INSERT INTO users VALUES(?,?,?,?,?,?);", (None, chat_id, username, ref_id, datetime.datetime.now(), 10))
         connect.commit()
 
@@ -185,7 +210,6 @@ async def get_photo_user_album(chat_id):
                 await bot.send_media_group(chat_id, album)
                 await  bot.send_message(chat_id,f'📸 Пользователь {from_user_data[2]} поделился с вами фотографиями:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
 
-
 @bot.message_handler(content_types=['text'])
 async def chat_message(message):
 
@@ -198,13 +222,6 @@ async def chat_message(message):
     ref_id = message.chat.id
     if message.text == '🌁 Фото со мной':
         await get_photo_user_album(message.chat.id)
-         #markup = types.InlineKeyboardMarkup(row_width=2)
-         #item_my_photo1 = types.InlineKeyboardButton(text='Отправить в ответ',callback_data='itemmyphoto1')
-         #item_my_photo2 = types.InlineKeyboardButton(text='Далее',callback_data='itemmyphoto2')
-         #item_my_photo3 = types.InlineKeyboardButton(text='Назад',callback_data='itemmyphoto2')
-         #markup.add(item_my_photo1)
-         #await bot.send_message(message.chat.id,f'📸 Пользователь {message.from_user.first_name} поделился с вами фотограиями:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"')
-
     elif message.text == '📨 Обратная связь':
         markup_info = types.InlineKeyboardMarkup(row_width=2)
         item_info1 = types.InlineKeyboardButton(text='📬 Support',callback_data='instagram_info',url='https://t.me/friendme_support')
@@ -221,6 +238,13 @@ async def chat_message(message):
     elif message.text == '📕 О нас':
         info_image = open('images/friendme_logo.jpg','rb')
         await bot.send_photo(message.chat.id,info_image,caption='Добро пожаловать в нашем боте FriendMe, созданное специально для вас и ваших друзей!\n\nМы понимаем, что поделиться фотографиями с близкими людьми - это особенно приятно. Поэтому мы разработали этого бота, чтобы сделать процесс обмена фотографиями еще более удобным и приятным для вас.\n\nПоэтому что бы получить множество фотографий от ваших друзей ,родственников или же колег  с любого рода мероприятия . Вам придется легко сгенерировать реферальную ссылку и поделиться ей любым удобным способом\n\nМы нацелены на ваше удовлетворение, поэтому постоянно работаем над улучшением и совершенствованием нашего бота. Мы стремимся предоставить вам самый приятный и удобный опыт использования.\n\nСпасибо, что выбрали нашего бота, и дарите своим друзьям незабываемые моменты и радость фотографий. Мы надеемся, что оно станет вашим надежным спутником и поможет вам создавать прекрасные воспоминания с вашими близкими.')
+    else:
+        await error_command(message.chat.id)
+        return
+
+    amplitude_track("btn_click", message.chat.id, {
+        "button_name": message.text
+    })
 
 @bot.message_handler(content_types=['photo'])
 async def photo(message):
@@ -264,6 +288,10 @@ async def photo(message):
                     await bot.send_message(message.chat.id, f"👀 Для просмотра данных фотографий вашему другу потребуется отправить в ответ какие-то фотографии с вами, после чего мы обязательно их перешлем вам :) \n\nЧтобы отправить ещё что-то пользователю <b>«{friendUser[2]}»</b> нажмите кнопку ниже <b>«Отправить ещё»</b>", reply_markup=markup, parse_mode='html')
                     await bot.send_message(ref_id,'💌 С вами поделились фотографиями\n\nДля того что бы их посмотреть зайдите в раздел <b>🌁 Фото со мной</b>',parse_mode='html')
 
+                    amplitude_track("send_photo", message.chat.id, {
+                        "to_user_id": ref_id
+                    })
+
                     cursor.execute("UPDATE users SET ref_id=? WHERE tg_id=?", (None, User[1], ))
                     connect.commit()
         else:
@@ -271,14 +299,17 @@ async def photo(message):
             await bot.send_message(ref_id,'💌 С вами поделились фотографиями\n\nДля того что бы их посмотреть зайдите в раздел <b>🌁 Фото со мной</b>',parse_mode='html')
             await bot.send_message(message.chat.id, f"👀 Для просмотра данных фотографий вашему другу потребуется отправить в ответ какие-то фотографии с вами, после чего мы обязательно их перешлем вам  :) \n\nЧтобы отправить ещё что-то пользователю <b>«{friendUser[2]}»</b> нажмите кнопку ниже <b>«Отправить ещё»</b>", reply_markup=markup, parse_mode='html')
 
+            amplitude_track("send_photo", message.chat.id, {
+                "to_user_id": ref_id
+            })
+
             cursor.execute("UPDATE users SET ref_id=? WHERE tg_id=?", (None, User[1], ))
             connect.commit()
 
 @bot.callback_query_handler(func=lambda callback:callback.data)
-async def callback_my_photo(callback):
+async def callback_my_photo (callback):
     User = auth_user(callback.message.chat.id, callback.from_user.username)
 
-    print("callback.data:",callback.data)
     if callback.data == 'cancel_send_photo':
 
         if User[3] is None:
@@ -389,6 +420,7 @@ async def callback_my_photo(callback):
         media = open('images/img_inst.jpg','rb')
         await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media))
         await bot.edit_message_caption(chat_id=callback.message.chat.id, message_id=callback.message.message_id,caption=f"3️⃣Добавьте стикер с уникальной ссылкой:⤵️\n\nhttps://t.me/{bot_name}?start={ref_id}", reply_markup=markup)
+
 async def error_command (chat_id):
     return await bot.send_message(chat_id,'<b>⛔ Произошла ошибка, данная команда недоступна!</b>',parse_mode='html')
 

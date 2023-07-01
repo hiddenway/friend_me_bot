@@ -7,6 +7,7 @@ services:
     environment:
       - BOT_TOKEN
       - AMP_TOKEN=ef58e9e7cdcfabb095f61798d8529d30
+      - bot_name=friend_me_bot
     volumes:
       - ./:/root/app:cached
 
