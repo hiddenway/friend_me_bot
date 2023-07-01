@@ -8,6 +8,7 @@ import os
 from dotenv import load_dotenv,find_dotenv
 import asyncio
 
+
 load_dotenv(find_dotenv())
 print('bot is activated 🗸')
 
@@ -143,7 +144,7 @@ async def get_photo_user_album(chat_id):
     cursor.execute("SELECT * FROM images WHERE to_id=?", (chat_id,))
 
     if len(cursor.fetchall()) == 0:
-        await bot.send_message(chat_id, "Фото нет")
+        await bot.send_message(chat_id, "📂 Ваша галерея  пока что пуста\n\nЧто бы её пополнить нужно поделится уникальной ссылкой\nДля этого перейдите в раздел <b>Собрать фото с друзей</b>",parse_mode='html')
         return
 
     cursor.execute("SELECT id_image, from_id FROM images WHERE to_id=? AND media_group_id IS NULL", (chat_id,))
@@ -151,8 +152,6 @@ async def get_photo_user_album(chat_id):
 
 
     if len(single_photo) != 0:
-        await bot.send_message(chat_id, "SINGLE:")
-
         for photo_id in single_photo:
 
             # GET USERNAME WITH FROM_ID
@@ -169,9 +168,6 @@ async def get_photo_user_album(chat_id):
     all_user_photo_groups = cursor.fetchall()
 
     if len(all_user_photo_groups) != 0:
-
-        await bot.send_message(chat_id, "MULTI:")
-
         for group_id in all_user_photo_groups:
             album = []
 
@@ -215,7 +211,7 @@ async def chat_message(message):
     elif message.text == '📸 Собрать фото с друзей':
         markup = types.InlineKeyboardMarkup(row_width=1)
         item1 = types.InlineKeyboardButton(text='Поделиться в Instagram Stories',callback_data='share1')
-        item2 = types.InlineKeyboardButton('Поделиться в Telegram',switch_inline_query=f'\n\nhttps://t.me/{bot_name}?start={ref_id}')
+        item2 = types.InlineKeyboardButton('Поделиться в Telegram',message_text='dd',switch_inline_query=f'\n\nhttps://t.me/{bot_name}?start={ref_id}')
         item3 = types.InlineKeyboardButton(text='Показать ссылку в чате',callback_data='share3')
         markup.add(item1,item2,item3)
         await bot.send_message(message.chat.id,'<b>⤴️ Чтобы собрать совместные фотографии с друзей, вам нужно поделиться с ними уникальной ссылкой, выберите удобный для вас способ ниже:</b>',parse_mode='html',reply_markup=markup)
@@ -263,13 +259,13 @@ async def photo(message):
                 if len(data) <= 1:
                     await send_menu_message(message.chat.id, "✅ Вы успешно отправили фотографии!")
                     await bot.send_message(message.chat.id, f"👀 Для просмотра данных фотографий вашему другу потребуется отправить в ответ какие-то фотографии с вами, после чего мы обязательно их перешлем вам :) \n\nЧтобы отправить ещё что-то пользователю <b>«{friendUser[2]}»</b> нажмите кнопку ниже <b>«Отправить ещё»</b>", reply_markup=markup, parse_mode='html')
-                    await bot.send_message(ref_id,'💌 С вами поделились фотографиями\n\nДля того что бы их посмотреть зайдите в <b>🌁 Фото со мной</b>',parse_mode='html')
+                    await bot.send_message(ref_id,'💌 С вами поделились фотографиями\n\nДля того что бы их посмотреть зайдите в раздел <b>🌁 Фото со мной</b>',parse_mode='html')
 
                     cursor.execute("UPDATE users SET ref_id=? WHERE tg_id=?", (None, User[1], ))
                     connect.commit()
         else:
             await send_menu_message(message.chat.id, "✅ Вы успешно отправили фотографию!")
-            await bot.send_message(ref_id,'💌 С вами поделились фотографиями\n\nДля того что бы их посмотреть зайдите в <b>🌁 Фото со мной</b>',parse_mode='html')
+            await bot.send_message(ref_id,'💌 С вами поделились фотографиями\n\nДля того что бы их посмотреть зайдите в раздел <b>🌁 Фото со мной</b>',parse_mode='html')
             await bot.send_message(message.chat.id, f"👀 Для просмотра данных фотографий вашему другу потребуется отправить в ответ какие-то фотографии с вами, после чего мы обязательно их перешлем вам  :) \n\nЧтобы отправить ещё что-то пользователю <b>«{friendUser[2]}»</b> нажмите кнопку ниже <b>«Отправить ещё»</b>", reply_markup=markup, parse_mode='html')
 
             cursor.execute("UPDATE users SET ref_id=? WHERE tg_id=?", (None, User[1], ))
