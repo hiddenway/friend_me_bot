@@ -219,7 +219,7 @@ async def chat_message(message):
     elif message.text == '📸 Собрать фото с друзей':
         markup = types.InlineKeyboardMarkup(row_width=1)
         item1 = types.InlineKeyboardButton(text='Поделиться в Instagram Stories',callback_data='share1')
-        item2 = types.InlineKeyboardButton('Поделиться в Telegram',message_text='dd',switch_inline_query=f'\n\nhttps://t.me/{bot_name}?start={ref_id}')
+        item2 = types.InlineKeyboardButton('Поделиться в Telegram',switch_inline_query=f'\n\n👋 Приветствую! Я бы хотел поделиться с вами уникальной ссылкой 🔗: https://t.me/{bot_name}?start={ref_id}\n\nБлагодаря этой ссылке, ты сможешь легко загружать свои фотографии, и я с радостью их получу. Давай начнем делиться восхитительными снимками вместе! 🤩')
         item3 = types.InlineKeyboardButton(text='Показать ссылку в чате',callback_data='share3')
         markup.add(item1,item2,item3)
         await bot.send_message(message.chat.id,'<b>⤴️ Чтобы собрать совместные фотографии с друзей, вам нужно поделиться с ними уникальной ссылкой, выберите удобный для вас способ ниже:</b>',parse_mode='html',reply_markup=markup)
