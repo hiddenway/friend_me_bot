@@ -17,6 +17,12 @@ jobs:
       run: |
         echo "
         BOT_TOKEN: ${{secrets.BOT_TOKEN_MAIN}}" > .env
+    - name: Stop FriendMe Bot Container
+      run: |
+        docker compose stop friend_me_bot
+    - name: Build FriendMe Bot Container
+      run: |
+        docker compose build friend_me_bot --no-cache
     - name: Deploy FriendMe Bot Container
       run: |
         docker compose up friend_me_bot -d
