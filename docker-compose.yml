@@ -6,6 +6,7 @@ services:
       - "8000:5000"
     environment:
       - BOT_TOKEN
+      - AMP_TOKEN=ef58e9e7cdcfabb095f61798d8529d30
     volumes:
       - ./:/root/app:cached
 

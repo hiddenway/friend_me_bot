@@ -7,11 +7,14 @@ from telebot import types
 import os
 from dotenv import load_dotenv,find_dotenv
 import asyncio
-
+from amplitude import Amplitude
+from amplitude import BaseEvent
 
 load_dotenv(find_dotenv())
 print('bot is activated 🗸')
 
+
+amplitude = Amplitude(os.getenv('AMP_TOKEN'))
 bot = AsyncTeleBot(os.getenv('BOT_TOKEN'))
 connect = sqlite3.connect('friendMe.db', check_same_thread=False)
 bot_name = "friend_me_bot"
