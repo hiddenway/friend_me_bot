@@ -33,13 +33,13 @@ def amplitude_track(event_name, chat_id, event_props, user_props = None):
         identify_obj= Identify()
         for key, value in user_props.items():
             identify_obj.add(key, value)
-            amplitude.identify(identify_obj, EventOptions(user_id=chat_id))
+            amplitude.identify(identify_obj, EventOptions(user_id=str(chat_id)))
 
     amplitude.track(
         BaseEvent(
             event_type=event_name,
             device_id=None,
-            user_id=chat_id,
+            user_id=str(chat_id),
             event_properties=event_props
         )
     )
@@ -250,9 +250,9 @@ async def chat_message(message):
         return
 
 
-    print ("AMPLITUDE MENU BTN CLICK: ", message)
+
     amplitude_track("btn_click", message.chat.id, {
-        "button_name": str(message.text)
+        "button_name": "тест"#str(message.text)
     })
 
 @bot.message_handler(content_types=['photo'])
