@@ -250,9 +250,9 @@ async def chat_message(message):
         return
 
 
-
+    print("EVENT BTN CLICK:", str(message.text))
     amplitude_track("btn_click", message.chat.id, {
-        "button_name": "тест"#str(message.text)
+        "button_name": str(message.text)
     })
 
 @bot.message_handler(content_types=['photo'])
