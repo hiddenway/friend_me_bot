@@ -245,8 +245,10 @@ async def chat_message(message):
         await error_command(message.chat.id)
         return
 
+
+    print ("AMPLITUDE MENU BTN CLICK: ", message)
     amplitude_track("btn_click", message.chat.id, {
-        "button_name": message.text
+        "button_name": str(message.text)
     })
 
 @bot.message_handler(content_types=['photo'])
