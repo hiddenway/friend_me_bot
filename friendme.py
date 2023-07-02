@@ -145,10 +145,9 @@ async def start(message):
     witch_ref_link = False
 
     if len(ref_id_arr) > 1:
-        ref_id = ref_id_arr[1]
-        if get_user(ref_id) is not None and ref_id != None and ref_id != message.from_user.id:
-            if int(ref_id) != message.from_user.id:
-                witch_ref_link = True
+        if len(ref_id_arr) > 1 and get_user(ref_id) is not None and ref_id != None and ref_id != message.from_user.id:
+            ref_id = ref_id_arr[1]
+            witch_ref_link = True
 
     User = auth_user(message.from_user.id, message.from_user.username, ref_id)
 
@@ -205,7 +204,7 @@ async def get_photo_user_album(chat_id):
             for image_id in images:
 
                 # GET USERNAME WITH FROM_ID
-                from_user_data = get_user(photo_id[1])
+                from_user_data = get_user(image_id[1])
 
                 album.append(types.InputMediaPhoto(image_id[0]))
                 markup = types.InlineKeyboardMarkup()
