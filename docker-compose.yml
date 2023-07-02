@@ -10,6 +10,7 @@ services:
       - bot_name=friend_me_bot
     volumes:
       - ./:/root/app:cached
+      - db_volume:/root/app/db
 
 volumes: 
-    db_data:
+    db_volume:

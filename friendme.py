@@ -15,7 +15,7 @@ print('bot is activated 🗸')
 
 amplitude = Amplitude(os.getenv('AMP_TOKEN'))
 bot = AsyncTeleBot(os.getenv('BOT_TOKEN'))
-connect = sqlite3.connect('friendMe.db', check_same_thread=False)
+connect = sqlite3.connect('./db/friendMe.db', check_same_thread=False)
 bot_name = os.getenv('bot_name')
 admin_id = 1900666417
 admin_id2 = 522380141
