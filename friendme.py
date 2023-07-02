@@ -95,6 +95,8 @@ def auth_user(chat_id, username, ref_id=None):
         cursor.execute("INSERT INTO users VALUES(?,?,?,?,?,?);", (None, chat_id, username, ref_id, datetime.datetime.now(), 10))
         connect.commit()
 
+
+
     else:
         if ref_id is not None:
             cursor.execute("UPDATE users SET ref_id=? WHERE tg_id=?", (ref_id, chat_id))
@@ -364,7 +366,7 @@ async def callback_my_photo (callback):
     elif callback.data == 'share3':
         await bot.send_message(callback.message.chat.id, f'https://t.me/{bot_name}?start={ref_id}')
     elif callback.data == 'item_next1':
-        media = open("images/img_inst.jpg", "rb")
+        media = open("images/instphoto.png", "rb")
         markup = types.InlineKeyboardMarkup()
         item_back = types.InlineKeyboardButton(text='Назад',callback_data='item_back2')
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_next2')
@@ -379,7 +381,7 @@ async def callback_my_photo (callback):
         await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media))
         await bot.edit_message_caption(chat_id=callback.message.chat.id, message_id=callback.message.message_id,caption='Чтобы выложить историю в инстаграм как показано ниже, сделайте 3 простых шага:', reply_markup=markup)
     elif callback.data == 'item_next2':
-        media = open('images/inst.jpg','rb')
+        media = open('images/instphoto2.png','rb')
         markup = types.InlineKeyboardMarkup()
         item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back3')
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_next3')
@@ -391,11 +393,11 @@ async def callback_my_photo (callback):
         item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back2')
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_next2')
         markup.add(item_back, item_next)
-        media = open('images/img_inst.jpg', 'rb')
+        media = open('images/instphoto.png', 'rb')
         await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media))
         await bot.edit_message_caption(chat_id=callback.message.chat.id, message_id=callback.message.message_id,caption='️1️⃣Скачайте изображение которое мы отправили:',reply_markup=markup)
     elif callback.data == 'item_next3':
-        media = open('images/img_inst.jpg','rb')
+        media = open('images/instphoto1.png','rb')
         markup = types.InlineKeyboardMarkup()
         item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back4')
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_share4')
@@ -407,11 +409,11 @@ async def callback_my_photo (callback):
         item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back3')
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_next3')
         markup.add(item_back, item_next)
-        media = open('images/inst.jpg', 'rb')
+        media = open('images/instphoto2.png', 'rb')
         await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media))
         await bot.edit_message_caption(chat_id=callback.message.chat.id, message_id=callback.message.message_id,caption='️2️⃣Загрузите изображение в инстаграм сторис:',reply_markup=markup)
     elif callback.data == 'item_share4':
-        media = open('images/inst.jpg','rb')
+        media = open('images/finishinst.png','rb')
         markup = types.InlineKeyboardMarkup()
         item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back5')
         markup.add(item_back)
@@ -422,7 +424,7 @@ async def callback_my_photo (callback):
         item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back4')
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_share4')
         markup.add(item_back, item_next)
-        media = open('images/img_inst.jpg','rb')
+        media = open('images/instphoto1.png','rb')
         await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media))
         await bot.edit_message_caption(chat_id=callback.message.chat.id, message_id=callback.message.message_id,caption=f"3️⃣Добавьте стикер с уникальной ссылкой:⤵️\n\nhttps://t.me/{bot_name}?start={ref_id}", reply_markup=markup)
 
