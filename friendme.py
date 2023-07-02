@@ -145,7 +145,7 @@ async def start(message):
     witch_ref_link = False
 
     if len(ref_id_arr) > 1:
-        if len(ref_id_arr) > 1 and get_user(ref_id) is not None and ref_id != None and ref_id != message.from_user.id:
+        if get_user(ref_id_arr[1]) is not None and ref_id_arr[1] != None and ref_id_arr[1] != message.from_user.id:
             ref_id = ref_id_arr[1]
             witch_ref_link = True
 
