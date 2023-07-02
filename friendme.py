@@ -199,13 +199,14 @@ async def get_photo_user_album(chat_id):
         for group_id in all_user_photo_groups:
             album = []
 
-            cursor.execute("SELECT id_image FROM images WHERE media_group_id=?", (group_id[0],))
+            cursor.execute("SELECT id_image, from_id FROM images WHERE media_group_id=?", (group_id[0],))
             images = cursor.fetchall()
 
-            # GET USERNAME WITH FROM_ID
-            from_user_data = get_user(photo_id[1])
-
             for image_id in images:
+
+                # GET USERNAME WITH FROM_ID
+                from_user_data = get_user(photo_id[1])
+
                 album.append(types.InputMediaPhoto(image_id[0]))
                 markup = types.InlineKeyboardMarkup()
                 item1 = types.InlineKeyboardButton(text='Отправить в ответ',url=f"https://t.me/{bot_name}?start={from_user_data[1]}")
