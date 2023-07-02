@@ -8,6 +8,10 @@ import os
 from dotenv import load_dotenv,find_dotenv
 import asyncio
 from amplitude import Amplitude, Identify, EventOptions, BaseEvent
+import sys
+
+# Установите кодировку ввода
+sys.stdin.reconfigure(encoding='utf-8')
 
 load_dotenv(find_dotenv())
 print('bot is activated 🗸')
