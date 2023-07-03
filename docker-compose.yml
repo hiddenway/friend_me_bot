@@ -8,9 +8,10 @@ services:
       - BOT_TOKEN
       - AMP_TOKEN=ef58e9e7cdcfabb095f61798d8529d30
       - bot_name=friend_me_bot
+      - isDocker=true
     volumes:
       - ./:/root/app:cached
-      - db_volume:/root/app/db
+      - db_volume:/root/db
 
 volumes: 
     db_volume:

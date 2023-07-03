@@ -16,10 +16,14 @@ sys.stdin.reconfigure(encoding='utf-8')
 load_dotenv(find_dotenv())
 print('bot is activated 🗸')
 
+if (os.getenv('isDocker')):
+    path_to_db = '../db/friendMe.db'
+else:
+    path_to_db = './db/friendMe.db'
 
 amplitude = Amplitude(os.getenv('AMP_TOKEN'))
 bot = AsyncTeleBot(os.getenv('BOT_TOKEN'))
-connect = sqlite3.connect('./db/friendMe.db', check_same_thread=False)
+connect = sqlite3.connect(path_to_db, check_same_thread=False)
 bot_name = os.getenv('bot_name')
 admin_id = 1900666417
 admin_id2 = 522380141
