@@ -152,8 +152,9 @@ async def get_photo_user_album(chat_id):
             item1 = types.InlineKeyboardButton(text='Отправить в ответ', url=f"https://t.me/{bot_name}?start={from_user_data[1]}")
             markup.add(item1)
 
-            if (validate_send_back(chat_id, photo_id[1])):
-                await bot.send_photo(chat_id, photo_id[0],caption=f'📸 Пользователь <b>{from_user_data[2]}</b> поделился с вами фотографией:',parse_mode='html')
+            if (validate_send_back(photo_id[1], chat_id)):
+                await bot.send_message(chat_id, f'📸 Пользователь <b>{from_user_data[2]}</b> поделился с вами фотографией:',parse_mode='HTML')
+                await bot.send_photo(chat_id, photo_id[0])
             else:
                 if photo_id[1] not in tmp_arr_usr_list:
                     await bot.send_message(chat_id, f'📸 Пользователь {from_user_data[2]} поделился с вами фотографией:\n\nЧто бы её увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
@@ -170,26 +171,27 @@ async def get_photo_user_album(chat_id):
         for group_id in all_user_photo_groups:
             album = []
 
-            cursor.execute("SELECT id_image, from_id FROM images WHERE media_group_id=?", (group_id[0],))
+            cursor.execute("SELECT id_image, from_id, to_id FROM images WHERE media_group_id=?", (group_id[0],))
             images = cursor.fetchall()
 
             for image_id in images:
 
-                # GET USERNAME WITH FROM_ID
-                from_user_data = get_user(image_id[1])
-
                 album.append(types.InputMediaPhoto(image_id[0]))
-                markup = types.InlineKeyboardMarkup()
-                item1 = types.InlineKeyboardButton(text='Отправить в ответ',url=f"https://t.me/{bot_name}?start={from_user_data[1]}")
-                markup.add(item1)
 
-                if (validate_send_back(chat_id, image_id[1])):
-                    await bot.send_media_group(chat_id, album)
-                    await bot.send_message(chat_id, f'📸 Пользователь <b>{from_user_data[2]}</b> поделился с вами фотографиями:',parse_mode='html')
-                else:
-                    if image_id[1] not in tmp_arr_usr_list:
-                        await bot.send_message(chat_id, f'📸 Пользователь <b>{from_user_data[2]}</b> поделился с вами фотографиями:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup, parse_mode='html')
-                        tmp_arr_usr_list.append(image_id[1])
+            # GET USERNAME WITH FROM_ID
+            from_user_data = get_user(images[0][1])
+
+            markup = types.InlineKeyboardMarkup()
+            item1 = types.InlineKeyboardButton(text='Отправить в ответ',url=f"https://t.me/{bot_name}?start={from_user_data[1]}")
+            markup.add(item1)
+
+            if (validate_send_back(from_user_data[1], chat_id)):
+                await bot.send_message(chat_id, f'📸 Пользователь <b>{from_user_data[2]}</b> поделился с вами фотографиями:',parse_mode='html')
+                await bot.send_media_group(chat_id, album)
+            else:
+                if from_user_data[1] not in tmp_arr_usr_list:
+                    await bot.send_message(chat_id, f'📸 Пользователь <b>{from_user_data[2]}</b> поделился с вами фотографиями:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup, parse_mode='html')
+                    tmp_arr_usr_list.append(from_user_data[1])
 
 #Очистить БД
 @bot.message_handler(commands=['clear'])
