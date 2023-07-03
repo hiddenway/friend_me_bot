@@ -20,8 +20,8 @@ print('bot is activated 🗸')
 path_to_db = './db/friendMe.db'
 
 if (os.getenv('isDocker')):
-    path_to_db = '../db/friendMe.db'
-    
+    path_to_db = '/root/db/friendMe.db'
+
 amplitude = Amplitude(os.getenv('AMP_TOKEN'))
 bot = AsyncTeleBot(os.getenv('BOT_TOKEN'))
 connect = sqlite3.connect(path_to_db, check_same_thread=False)
