@@ -114,8 +114,6 @@ def auth_user(chat_id, username, ref_id=None):
     cursor.execute("SELECT * FROM users WHERE tg_id=?", (chat_id, ))
     User = cursor.fetchone()
 
-    print("User Data: ", User)
-
     return User
 
 # Работа с разделом мои фото
@@ -235,7 +233,7 @@ async def start(message):
             ref_id = ref_id_arr[1]
             witch_ref_link = True
 
-    User = auth_user(message.from_user.id, message.from_user.username, ref_id)
+    User = auth_user(message.from_user.id, message.from_user.username or message.from_user.first_name, ref_id)
 
     if User[3] is not None and ref_id == None:
         await only_photo(User)
@@ -252,7 +250,7 @@ async def start(message):
 @bot.message_handler(content_types=['text'])
 async def chat_message(message):
 
-    User = auth_user(message.from_user.id, message.from_user.username)
+    User = auth_user(message.from_user.id, message.from_user.username or message.from_user.first_name)
 
     if User[3] is not None:
         await only_photo(User)
@@ -291,7 +289,7 @@ async def chat_message(message):
 async def photo(message):
 
     #Получаем данные пользователя из БД, если их нету то создаём
-    User = auth_user(message.from_user.id, message.from_user.username)
+    User = auth_user(message.from_user.id, message.from_user.username or message.from_user.first_name)
 
     #Получаем id пользователя который отправил ссылку
     ref_id = User[3]
@@ -349,7 +347,7 @@ async def photo(message):
 
 @bot.callback_query_handler(func=lambda callback:callback.data)
 async def callback_my_photo (callback):
-    User = auth_user(callback.message.chat.id, callback.from_user.username)
+    User = auth_user(callback.message.chat.id, callback.message.from_user.username or callback.message.from_user.first_name)
 
     if callback.data == 'cancel_send_photo':
 
