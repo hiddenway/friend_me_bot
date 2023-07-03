@@ -120,6 +120,12 @@ def auth_user(chat_id, username, ref_id=None):
 
 # Работа с разделом мои фото
 
+def validate_send_back(sender_id, receiver_id):
+    cursor = connect.cursor()
+    cursor.execute(f"SELECT * FROM images WHERE to_id=? and from_id=?", (sender_id, receiver_id, ))
+
+    return len(cursor.fetchall()) != 0
+
 async def get_photo_user_album(chat_id):
     cursor = connect.cursor()
 
@@ -183,12 +189,6 @@ async def get_photo_user_album(chat_id):
                     if image_id[1] not in tmp_arr_usr_list:
                         await bot.send_message(chat_id, f'📸 Пользователь {from_user_data[2]} поделился с вами фотографиями:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
                         tmp_arr_usr_list.append(image_id[1])
-                        
-async def validate_send_back(sender_id, receiver_id):
-    cursor = connect.cursor()
-    cursor.execute(f"SELECT * FROM images WHERE to_id=? and from_id=?", (sender_id, receiver_id, ))
-
-    return len(cursor.fetchall()) != 0
 
 #Очистить БД
 @bot.message_handler(commands=['clear'])
