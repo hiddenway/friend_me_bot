@@ -16,11 +16,12 @@ sys.stdin.reconfigure(encoding='utf-8')
 load_dotenv(find_dotenv())
 print('bot is activated 🗸')
 
+
+path_to_db = './db/friendMe.db'
+
 if (os.getenv('isDocker')):
     path_to_db = '../db/friendMe.db'
-else:
-    path_to_db = './db/friendMe.db'
-
+    
 amplitude = Amplitude(os.getenv('AMP_TOKEN'))
 bot = AsyncTeleBot(os.getenv('BOT_TOKEN'))
 connect = sqlite3.connect(path_to_db, check_same_thread=False)
@@ -79,9 +80,11 @@ def init_bot():
 
 init_bot()
 
+# Авторизация пользователей
+
 def get_user(chat_id):
     cursor = connect.cursor()
-    cursor.execute(f"SELECT * FROM users WHERE tg_id={chat_id}")
+    cursor.execute(f"SELECT * FROM users WHERE tg_id=?", (chat_id,))
     return cursor.fetchone()
 
 def auth_user(chat_id, username, ref_id=None):
@@ -114,6 +117,64 @@ def auth_user(chat_id, username, ref_id=None):
     print("User Data: ", User)
 
     return User
+
+# Работа с разделом мои фото
+
+async def get_photo_user_album(chat_id):
+    cursor = connect.cursor()
+
+    #SEND SINGLE PHOTO
+
+    cursor.execute("SELECT * FROM images WHERE to_id=?", (chat_id,))
+
+    if len(cursor.fetchall()) == 0:
+        await bot.send_message(chat_id, "📂 Ваша галерея  пока что пуста\n\nЧто бы её пополнить нужно поделится уникальной ссылкой\nДля этого перейдите в раздел <b>Собрать фото с друзей</b>",parse_mode='html')
+        return
+
+    cursor.execute("SELECT id_image, from_id FROM images WHERE to_id=? AND media_group_id IS NULL", (chat_id,))
+    single_photo = cursor.fetchall()
+
+
+    if len(single_photo) != 0:
+        for photo_id in single_photo:
+
+            # GET USERNAME WITH FROM_ID
+            from_user_data = get_user(photo_id[1])
+
+            markup = types.InlineKeyboardMarkup()
+            item1 = types.InlineKeyboardButton(text='Отправить в ответ', url=f"https://t.me/{bot_name}?start={from_user_data[1]}")
+            markup.add(item1)
+
+            await bot.send_photo(chat_id, photo_id[0],caption=f'📸 Пользователь {from_user_data[2]} поделился с вами фотографиями:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
+
+    #SEND MULTI PHOTO
+    cursor.execute("SELECT DISTINCT media_group_id FROM images WHERE to_id=? AND media_group_id IS NOT NULL", (chat_id,))
+    all_user_photo_groups = cursor.fetchall()
+
+    if len(all_user_photo_groups) != 0:
+        for group_id in all_user_photo_groups:
+            album = []
+
+            cursor.execute("SELECT id_image, from_id FROM images WHERE media_group_id=?", (group_id[0],))
+            images = cursor.fetchall()
+
+            for image_id in images:
+
+                # GET USERNAME WITH FROM_ID
+                from_user_data = get_user(image_id[1])
+
+                album.append(types.InputMediaPhoto(image_id[0]))
+                markup = types.InlineKeyboardMarkup()
+                item1 = types.InlineKeyboardButton(text='Отправить в ответ',url=f"https://t.me/{bot_name}?start={from_user_data[1]}")
+                markup.add(item1)
+                await bot.send_media_group(chat_id, album)
+                await  bot.send_message(chat_id,f'📸 Пользователь {from_user_data[2]} поделился с вами фотографиями:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
+
+async def validate_send_back(sender_id, receiver_id):
+    cursor = connect.cursor()
+    cursor.execute(f"SELECT * FROM images WHERE to_id=? and from_id=?", (sender_id, receiver_id, ))
+
+    return len(cursor.fetchall()) != 0
 
 #Очистить БД
 @bot.message_handler(commands=['clear'])
@@ -170,56 +231,6 @@ async def start(message):
             await start_with_ref_link(User[1], ref_id)
     else:
         await send_menu_message(message.chat.id, '<b>Приветствуем тебя дорогой друг!👋</b>\nС помощью нашего бота ты можешь со всех своих друзей собрать совместные фото и видео с тобой и вспомнить забытые и смешные моменты!\n\n<b>Как это работает:</b>\n1️⃣Нажмите кнопку в меню "Собрать фото с друзей"\n2️⃣Выберите "Поделиться историей Instagram"\n3️⃣﻿﻿Добавьте себе историю в инстаграм как указано инструкции по кнопке\n4️⃣Все фото которые отправят друзья мы будем отображать в разделе "Мои фото"\n\nКак только кто-то из твоих друзей отправит что-то по ссылке мы обязательно тебе об этом скажем😊')
-
-async def get_photo_user_album(chat_id):
-    cursor = connect.cursor()
-
-    #SEND SINGLE PHOTO
-
-    cursor.execute("SELECT * FROM images WHERE to_id=?", (chat_id,))
-
-    if len(cursor.fetchall()) == 0:
-        await bot.send_message(chat_id, "📂 Ваша галерея  пока что пуста\n\nЧто бы её пополнить нужно поделится уникальной ссылкой\nДля этого перейдите в раздел <b>Собрать фото с друзей</b>",parse_mode='html')
-        return
-
-    cursor.execute("SELECT id_image, from_id FROM images WHERE to_id=? AND media_group_id IS NULL", (chat_id,))
-    single_photo = cursor.fetchall()
-
-
-    if len(single_photo) != 0:
-        for photo_id in single_photo:
-
-            # GET USERNAME WITH FROM_ID
-            from_user_data = get_user(photo_id[1])
-
-            markup = types.InlineKeyboardMarkup()
-            item1 = types.InlineKeyboardButton(text='Отправить в ответ', url=f"https://t.me/{bot_name}?start={from_user_data[1]}")
-            markup.add(item1)
-
-            await bot.send_photo(chat_id, photo_id[0],caption=f'📸 Пользователь {from_user_data[2]} поделился с вами фотографиями:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
-
-    #SEND MULTI PHOTO
-    cursor.execute("SELECT DISTINCT media_group_id FROM images WHERE to_id=? AND media_group_id IS NOT NULL", (chat_id,))
-    all_user_photo_groups = cursor.fetchall()
-
-    if len(all_user_photo_groups) != 0:
-        for group_id in all_user_photo_groups:
-            album = []
-
-            cursor.execute("SELECT id_image, from_id FROM images WHERE media_group_id=?", (group_id[0],))
-            images = cursor.fetchall()
-
-            for image_id in images:
-
-                # GET USERNAME WITH FROM_ID
-                from_user_data = get_user(image_id[1])
-
-                album.append(types.InputMediaPhoto(image_id[0]))
-                markup = types.InlineKeyboardMarkup()
-                item1 = types.InlineKeyboardButton(text='Отправить в ответ',url=f"https://t.me/{bot_name}?start={from_user_data[1]}")
-                markup.add(item1)
-                await bot.send_media_group(chat_id, album)
-                await  bot.send_message(chat_id,f'📸 Пользователь {from_user_data[2]} поделился с вами фотографиями:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
 
 @bot.message_handler(content_types=['text'])
 async def chat_message(message):
