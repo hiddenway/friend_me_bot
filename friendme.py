@@ -413,7 +413,7 @@ async def callback_my_photo (callback):
         markup = types.InlineKeyboardMarkup()
         item_next = types.InlineKeyboardButton(text='Начать',callback_data='item_next1')
         markup.add(item_next)
-        image = open('images/instphoto.png', 'rb')
+        image = open('images/inst4.png', 'rb')
         await bot.send_photo(callback.message.chat.id,image,caption='Чтобы выложить историю в инстаграм как показано выше , сделайте 3 простых шага:',reply_markup=markup)
     elif callback.data == 'share2':
         await bot.send_message(callback.message.chat.id,'')
@@ -430,7 +430,7 @@ async def callback_my_photo (callback):
         markup = types.InlineKeyboardMarkup()
         item_next = types.InlineKeyboardButton(text='Начать', callback_data='item_next1')
         markup.add(item_next)
-        media = open('images/instphoto.png', 'rb')
+        media = open('images/inst4.png', 'rb')
         await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media,caption='Чтобы выложить историю в инстаграм как показано выше, сделайте 3 простых шага:'),reply_markup=markup)
     elif callback.data == 'item_next2':
         media = open('images/inst2.png','rb')
