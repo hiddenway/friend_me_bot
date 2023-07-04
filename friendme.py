@@ -461,7 +461,7 @@ async def callback_my_photo (callback):
         media = open('images/inst2.png', 'rb')
         await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media,caption='️2️⃣Загрузите изображение в инстаграм сторис:'),reply_markup=markup)
     elif callback.data == 'item_share4':
-        media = open('images/inst5.png','rb')
+        media = open('images/inst4.png','rb')
         markup = types.InlineKeyboardMarkup()
         item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back5')
         markup.add(item_back)
