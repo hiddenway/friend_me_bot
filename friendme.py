@@ -227,7 +227,7 @@ async def get_photos(message):
             file_info = await bot.get_file(f_id)
             down_file = await bot.download_file(file_info.file_path)
             name = str( uuid.uuid4()+ '.jpg')
-            with open(os.path.join("./user_content/", name), 'w') as file:
+            with open(os.path.join("user_content", name), 'w') as file:
                 file.write(down_file)
 
     else:
