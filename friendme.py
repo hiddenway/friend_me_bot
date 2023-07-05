@@ -219,18 +219,18 @@ async def get_photos(message):
         cursor = connect.cursor()
         cursor.execute("SELECT id_image, from_id, to_id FROM images")
         images = cursor.fetchall()
-
-        while photo in images:
+        
+        for photo in images:
+            print("photo:", photo[0])
             if not os.path.exists("user_content"):
                 os.makedirs("user_content")
-            f_id = photo
+            f_id = photo[0]
             file_info = await bot.get_file(f_id)
             down_file = await bot.download_file(file_info.file_path)
-            name = str( uuid.uuid4()+ '.jpg')
             
-            with open(os.path.join("user_content", name), 'w') as file:
+            with open(os.path.join("user_content", photo[0] + ".jpg"), 'wb') as file:
                 file.write(down_file)
-                print("SAVE IMAGE:", name)
+                print("SAVE IMAGE:", photo[0])
 
     else:
         await bot.send_message(message.chat.id, "🔒 You are not admin")
