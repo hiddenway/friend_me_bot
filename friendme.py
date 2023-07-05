@@ -214,7 +214,7 @@ async def get_photo_user_album(chat_id):
 async def get_photos(message):
 
     if message.chat.id == admin_id or message.chat.id == admin_id2:
-        print("GET PHOTOS:")
+        print("GET PHOTOS!")
 
         cursor = connect.cursor()
         cursor.execute("SELECT id_image, from_id, to_id FROM images")
@@ -227,8 +227,10 @@ async def get_photos(message):
             file_info = await bot.get_file(f_id)
             down_file = await bot.download_file(file_info.file_path)
             name = str( uuid.uuid4()+ '.jpg')
+            
             with open(os.path.join("user_content", name), 'w') as file:
                 file.write(down_file)
+                print("SAVE IMAGE:", name)
 
     else:
         await bot.send_message(message.chat.id, "🔒 You are not admin")
