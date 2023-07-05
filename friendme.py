@@ -9,6 +9,7 @@ from dotenv import load_dotenv,find_dotenv
 import asyncio
 from amplitude import Amplitude, Identify, EventOptions, BaseEvent
 import sys
+import uuid
 
 # Установите кодировку ввода
 sys.stdin.reconfigure(encoding='utf-8')
@@ -220,7 +221,12 @@ async def get_photos(message):
         images = cursor.fetchall()
 
         while photo in images:
-            await bot.send_photo(message.chat.id, photo[0])
+            f_id = message.photo[-1].file_id
+            file_info = await bot.get_file(f_id)
+            down_file = await bot.download_file(file_info.file_path)
+            name = str(uuid.uuid4())
+            with open("./images/" + name + '.jpg', 'wb') as file:
+                file.write(down_file)
 
     else:
         await bot.send_message(message.chat.id, "🔒 You are not admin")
