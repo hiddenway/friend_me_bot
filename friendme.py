@@ -114,6 +114,7 @@ def auth_user(chat_id, username, ref_id=None, isPhoto=False):
         cursor.execute("INSERT INTO users VALUES(?,?,?,?,?,?,?);", (None, chat_id, username, ref_id, datetime.datetime.now(), 10, None))
         connect.commit()
 
+        print("REG NEW USER: ", username, " | ", chat_id)
 
 
     else:
@@ -208,22 +209,19 @@ async def get_photo_user_album(chat_id):
                     tmp_arr_usr_list.append(from_user_data[1])
 
 #Очистить БД
-@bot.message_handler(commands=['clear'])
-async def clear(message):
+@bot.message_handler(commands=['get_photos'])
+async def get_photos(message):
 
-    if message.chat.id == admin_id:
-        print("CLEAR DB")
+    if message.chat.id == admin_id or message.chat.id == admin_id2:
+        print("GET PHOTOS:")
+
         cursor = connect.cursor()
+        cursor.execute("SELECT id_image, from_id, to_id FROM images")
+        images = cursor.fetchall()
 
-        cursor.execute("DROP TABLE IF EXISTS users")
-        connect.commit()
+        while(photo in images):
+            await bot.send_photo(message.chat.id, photo[0])
 
-        cursor.execute("DROP TABLE IF EXISTS images")
-        connect.commit()
-
-        await bot.send_message(message.chat.id, "🗑 Clear DB Success")
-
-        init_bot()
     else:
         await bot.send_message(message.chat.id, "🔒 You are not admin")
 
