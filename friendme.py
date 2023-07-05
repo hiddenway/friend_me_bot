@@ -221,7 +221,7 @@ async def get_photos(message):
         images = cursor.fetchall()
 
         while photo in images:
-            f_id = message.photo[-1].file_id
+            f_id = photo
             file_info = await bot.get_file(f_id)
             down_file = await bot.download_file(file_info.file_path)
             name = str(uuid.uuid4())
