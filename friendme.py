@@ -354,8 +354,6 @@ async def photo(message):
         markup.add(types.InlineKeyboardButton(text='💬 Отправить ещё' , url=f"https://t.me/{bot_name}?start={friendUser[1]}"))
         #Проверяем буфер
 
-        await bot.send_photo(support_admin, image_id, caption="[Admin] Фото от "+ User[2] +" к "+friendUser[2])
-
         if media_group_id is not None:
                 cursor.execute("SELECT * FROM images WHERE media_group_id=?", (media_group_id, ))
                 data = cursor.fetchall()
@@ -372,6 +370,9 @@ async def photo(message):
                     
                     cursor.execute("UPDATE users SET ref_id=?, last_receiver_id=? WHERE tg_id=?", (None, ref_id, User[1], ))
                     connect.commit()
+
+                    await bot.send_photo(support_admin, image_id, caption="[Admin] Фото от "+ User[2] +" к "+friendUser[2])
+
         else:
             await send_menu_message(message.chat.id, "✅ Вы успешно отправили фотографию!")
             await bot.send_message(ref_id,'💌 С вами поделились фотографиями\n\nДля того что бы их посмотреть зайдите в раздел <b>🌁 Фото со мной</b>',parse_mode='html')
@@ -383,6 +384,8 @@ async def photo(message):
 
             cursor.execute("UPDATE users SET ref_id=? WHERE tg_id=?", (None, User[1], ))
             connect.commit()
+
+            await bot.send_photo(support_admin, image_id, caption="[Admin] Фото от "+ User[2] +" к "+friendUser[2])
 
 @bot.callback_query_handler(func=lambda callback:callback.data)
 async def callback_my_photo (callback):
