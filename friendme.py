@@ -219,7 +219,7 @@ async def get_photos(message):
         cursor.execute("SELECT id_image, from_id, to_id FROM images")
         images = cursor.fetchall()
 
-        while(photo in images):
+        while photo in images:
             await bot.send_photo(message.chat.id, photo[0])
 
     else:
