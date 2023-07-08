@@ -99,10 +99,10 @@ def auth_user(chat_id, username, ref_id=None, isPhoto=False):
     if data is None:
 
         amp_ref_id = ref_id
-        
+
         if (ref_id == None):
             amp_ref_id = 0
-        
+
         amplitude_track("new_user", chat_id, {
             "from_user_id": amp_ref_id
         }, {
@@ -241,7 +241,7 @@ async def start(message):
     ref_id = None
     ref_id_arr = (message.text).split(' ')
     witch_ref_link = False
-    
+
     if len(ref_id_arr) > 1:
         if get_user(ref_id_arr[1]) is not None and ref_id_arr[1] != None:
             if int(ref_id_arr[1]) == message.from_user.id:
@@ -260,7 +260,7 @@ async def start(message):
     if witch_ref_link == True:
         await start_with_ref_link(User[1], ref_id)
     else:
-        await send_menu_message(message.chat.id, '<b>Приветствуем тебя дорогой друг!👋</b>\nС помощью нашего бота ты можешь со всех своих друзей собрать совместные фото и видео с тобой и вспомнить забытые и смешные моменты!\n\n<b>Как это работает:</b>\n1️⃣Нажмите кнопку в меню "Собрать фото с друзей"\n2️⃣Выберите "Поделиться историей Instagram"\n3️⃣﻿﻿Добавьте себе историю в инстаграм как указано инструкции по кнопке\n4️⃣Все фото которые отправят друзья мы будем отображать в разделе "Мои фото"\n\nКак только кто-то из твоих друзей отправит что-то по ссылке мы обязательно тебе об этом скажем😊')
+        await send_menu_message(message.chat.id, '<b>Приветствуем тебя дорогой друг!👋</b>\nС помощью нашего бота ты можешь со всех своих друзей собрать совместные фото с тобой и вспомнить забытые и смешные моменты!\n\n<b>Как это работает:</b>\n1️⃣Нажмите кнопку в меню "Собрать фото с друзей"\n2️⃣Выберите "Поделиться историей Instagram"\n3️⃣﻿﻿Добавьте себе историю в инстаграм как указано инструкции по кнопке\n4️⃣Все фото которые отправят друзья мы будем отображать в разделе "Мои фото"\n\nКак только кто-то из твоих друзей отправит что-то по ссылке мы обязательно тебе об этом скажем😊')
 
 @bot.message_handler(content_types=['text'])
 async def chat_message(message):
@@ -274,6 +274,7 @@ async def chat_message(message):
     ref_id = message.chat.id
     if message.text == '🌁 Фото со мной':
         await get_photo_user_album(message.chat.id)
+        await bot.send_message(message.chat.id, f'<b>Общее количество отправленных и полученных вами фотографий и видео:</b>\n\n📤Отправленных: {None} фотографий и {None} видео\n📥Полученных: {None} фотографий и {None} видео',parse_mode='html')
     elif message.text == '📨 Обратная связь':
         markup_info = types.InlineKeyboardMarkup(row_width=2)
         item_info1 = types.InlineKeyboardButton(text='📬 Support',callback_data='instagram_info',url='https://t.me/friendme_support')
@@ -299,13 +300,23 @@ async def chat_message(message):
     amplitude_track("btn_click", User[1], {
         "button_name": str(message.text)
     })
+@bot.message_handler(content_types=['video'])
+async def video(message):
+
+    await bot.send_message(message.chat.id,'✅ Ты отправил мне видео')
+    id_video = await bot.get_file(message.video.file_id)
+    print('ID_video: ',id_video)
+
+    #cursor = connect.cursor()
+    #cursor.execute("INSERT INTO images VALUES(?,?,?,?,?,?,?);",(None,None, id_video, None, None, None, None))
+    #connect.commit()
 
 @bot.message_handler(content_types=['photo'])
 async def photo(message):
-    
+
     #Получаем данные пользователя из БД, если их нету то создаём
     User = auth_user(message.from_user.id, message.from_user.username or message.from_user.first_name, isPhoto=True)
-    
+
     print("media_group:", message.media_group_id)
 
     #Получаем id пользователя который отправил ссылку
@@ -352,7 +363,7 @@ async def photo(message):
                         amplitude_track("send_photo", message.chat.id, {
                             "to_user_id": ref_id
                         })
-                    
+
                     cursor.execute("UPDATE users SET ref_id=?, last_receiver_id=? WHERE tg_id=?", (None, ref_id, User[1], ))
                     connect.commit()
         else:
