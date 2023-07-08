@@ -257,7 +257,7 @@ async def get_video_user_album(chat_id):
         for group_id in all_user_photo_groups:
             album = []
 
-            cursor.execute("SELECT id_image, from_id, to_id FROM images WHERE media_group_id=? AND media_type=?", (group_id[0], "video", ))
+            cursor.execute("SELECT id_image, from_id, to_id FROM images WHERE media_group_id=?", (group_id[0], ))
             images = cursor.fetchall()
 
             for image_id in images:
