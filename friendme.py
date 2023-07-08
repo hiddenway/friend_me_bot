@@ -262,7 +262,7 @@ async def get_video_user_album(chat_id):
 
             for image_id in images:
 
-                album.append(types.InputMediaPhoto(image_id[0]))
+                album.append(types.InputMediaVideo(image_id[0]))
 
             # GET USERNAME WITH FROM_ID
             from_user_data = get_user(images[0][1])
