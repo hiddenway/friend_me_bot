@@ -86,6 +86,18 @@ def init_bot():
 
 init_bot()
 
+@bot.message_handler(commands=['sendall'])
+async def send_all_message(message: types.Message):
+    cursor = connect.cursor()
+    cursor.execute("SELECT tg_id FROM users;")
+    users =cursor.fetchall()
+    print(users)
+    if message.chat.id == admin_id:
+        await bot.send_message(message.chat.id,'Starting')
+        for i in users:
+            await bot.send_message(i[0],message.text[message.text.find(' '):])
+    else:
+        await bot.send_message(message.chat.id,'Вы не являетесь администратором!')
 
 @bot.message_handler(commands=['admin'])
 async def admin_panel(message):
