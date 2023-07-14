@@ -20,9 +20,9 @@ jobs:
     - name: Stop FriendMe Bot Container
       run: |
         docker compose stop friend_me_bot
-    - name: Build FriendMe Bot Container
-      run: |
-        docker compose build friend_me_bot --no-cache
     - name: Deploy FriendMe Bot Container
       run: |
-        docker compose up friend_me_bot -d
+        docker compose up db -d
+    - name: Deploy FriendMe Bot Container
+      run: |
+        docker compose up friend_me_bot --build -d
