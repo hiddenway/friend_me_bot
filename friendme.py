@@ -162,7 +162,6 @@ def auth_user(chat_id, username, ref_id=None, isPhoto=False):
 
     return User
 
-
 # Работа с разделом мои фото
 
 def validate_send_back(sender_id, receiver_id):
@@ -172,139 +171,144 @@ def validate_send_back(sender_id, receiver_id):
     return len(cursor.fetchall()) != 0
 
 
-async def get_photo_user_album(chat_id):
+async def generate_collection_senders(chat_id, from_id=None, callback=None, current_element_count=None):
+    markup = types.InlineKeyboardMarkup(row_width=2)
+
     cursor = connect.cursor()
 
-    # SEND SINGLE PHOTO
+    isFirst = False
+    isLast = False
+    previous_element = None
+    current_element = None
+    next_element = None
 
-    cursor.execute("SELECT * FROM images WHERE to_id=? AND media_type=?", (chat_id, "photo",))
+    item_previous = None
+    item_next = None
 
-    if len(cursor.fetchall()) == 0:
-        await bot.send_message(chat_id,"📂 Ваша галерея пустая\n\nЧто бы её пополнить нужно поделится уникальной ссылкой\nДля этого перейдите в раздел <b>Собрать фото и видео с друзей</b>",parse_mode='html')
+    if from_id == None:
+
+        isFirst = True
+        cursor.execute("SELECT from_id FROM images WHERE to_id = ? ORDER BY from_id LIMIT 2", (chat_id, ))
+        elements = cursor.fetchall()
+
+        if (len(elements) == 2):
+            current_element = elements[0][0]
+            next_element = elements[1][0]
+        elif (len(elements) == 1):
+            isLast = True
+            current_element = elements[0][0]
+
+    elif from_id != None:
+        cursor.execute("SELECT from_id FROM images WHERE from_id = ? AND to_id = ? ORDER BY from_id LIMIT 1", (from_id, chat_id, ))
+        current_element = cursor.fetchone()
+
+        if current_element != None:
+
+            cursor.execute("SELECT from_id FROM images WHERE from_id < ? AND to_id = ? ORDER BY from_id LIMIT 1", (from_id, chat_id, ))
+            previous_element = cursor.fetchone()
+
+            cursor.execute("SELECT from_id FROM images WHERE from_id > ? AND to_id = ? ORDER BY from_id LIMIT 1", (from_id, chat_id, ))
+            next_element = cursor.fetchone()
+
+            if previous_element == None:
+                isFirst = True 
+            else:
+                previous_element = previous_element[0]
+
+            if next_element == None:
+                isLast = True
+            else:
+                next_element = next_element[0]
+
+            current_element = current_element[0]
+
+
+    else:
+        print("Error in photo menu generator, all input param is None")
         return
 
-    cursor.execute("SELECT id_image, from_id FROM images WHERE to_id=? AND media_group_id IS NULL AND media_type=?",(chat_id, "photo",))
-    single_photo = cursor.fetchall()
+    media = get_media_from_user(chat_id, current_element)
 
-    if len(single_photo) != 0:
-        tmp_arr_usr_list = []
-        for photo_id in single_photo:
+    if (isFirst is False):
+        item_previous = types.InlineKeyboardButton(text='<<', callback_data='photo_m_element_id:'+str(previous_element)+':'+str(len(media)))
 
-            # GET USERNAME WITH FROM_ID
-            from_user_data = get_user(photo_id[1])
+    elif (isLast is False):
+        item_next = types.InlineKeyboardButton(text='>>', callback_data='photo_m_element_id:'+str(next_element)+':'+str(len(media)))
 
-            markup = types.InlineKeyboardMarkup()
-            item1 = types.InlineKeyboardButton(text='Отправить в ответ',url=f"https://t.me/{bot_name}?start={from_user_data[1]}")
-            markup.add(item1)
+    item_current = types.InlineKeyboardButton('Жалоба ', callback_data='photo_m_element_id_report:'+str(current_element))
 
-            if (validate_send_back(photo_id[1], chat_id)):
-                await bot.send_message(chat_id,f'📸 Пользователь <b>{from_user_data[2]}</b> поделился с вами фотографией:',parse_mode='HTML')
-                await bot.send_photo(chat_id, photo_id[0])
+    if item_previous is None:
+        if item_next is None:
+            markup.add(item_current)
+        else:
+            markup.add(item_current, item_next)
+    elif item_next is None:
+        if item_previous is None:
+            markup.add(item_current)
+        else:
+            markup.add(item_previous, item_current)
+
+    if callback == None:
+        await bot.send_media_group(chat_id, media)
+        await bot.send_message(chat_id,f"<b>Photo ID:{current_element}</b>",parse_mode='html', reply_markup=markup)
+    else:
+
+        i = 0
+        current_element_count = int(current_element_count)
+
+        print("delete last message count: ",current_element_count + 1)
+
+        while(i <= current_element_count):
+            await bot.delete_message(chat_id, (callback.message.message_id - i))
+            print("les:", i)
+            i+=1
+        print("ends")
+        await bot.send_media_group(chat_id, media)
+        await bot.send_message(chat_id,f"<b>Photo ID:{current_element}</b>",parse_mode='html', reply_markup=markup)
+
+
+def get_media_from_user(chat_id, from_id):
+    cursor = connect.cursor()
+
+    media_group_data = []
+
+    # SEND SINGLE MEDIA
+
+    cursor.execute("SELECT * FROM images WHERE to_id=? AND from_id=?", (chat_id, from_id,))
+
+    if len(cursor.fetchall()) == 0:
+        return
+
+    cursor.execute("SELECT id_image, media_type FROM images WHERE to_id=? AND from_id=? AND media_group_id IS NULL",(chat_id, from_id,))
+    media_arr = cursor.fetchall()
+
+    if len(media_arr) != 0:
+
+        for single_media in media_arr:
+            if single_media[1] == "photo":
+                media_group_data.append(types.InputMediaPhoto(single_media[0]))
             else:
-                if photo_id[1] not in tmp_arr_usr_list:
-                    await bot.send_message(chat_id,f'📸 Пользователь {from_user_data[2]} поделился с вами фотографией:\n\nЧто бы её увидеть отправьте ему в ответ любую фотографию ил с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
-                    tmp_arr_usr_list.append(photo_id[1])
+                media_group_data.append(types.InputMediaVideo(single_media[0]))
 
-    # SEND MULTI PHOTO
+    # SEND MULTI MEDIA
     cursor.execute(
-        "SELECT DISTINCT media_group_id FROM images WHERE to_id=? AND media_group_id IS NOT NULL AND media_type=?",(chat_id, "photo",))
+        "SELECT DISTINCT media_group_id FROM images WHERE to_id=? AND from_id=? AND media_group_id IS NOT NULL",(chat_id, from_id,))
     all_user_photo_groups = cursor.fetchall()
 
     if len(all_user_photo_groups) != 0:
 
-        tmp_arr_usr_list = []
-
         for group_id in all_user_photo_groups:
-            album = []
 
-            cursor.execute("SELECT id_image, from_id, to_id FROM images WHERE media_group_id=? AND media_type=?",(group_id[0], "photo",))
-            images = cursor.fetchall()
+            cursor.execute("SELECT id_image, media_type FROM images WHERE media_group_id=?",(group_id[0],))
+            media_arr = cursor.fetchall()
 
-            for image_id in images:
-                album.append(types.InputMediaPhoto(image_id[0]))
-
-            # GET USERNAME WITH FROM_ID
-            from_user_data = get_user(images[0][1])
-
-            markup = types.InlineKeyboardMarkup()
-            item1 = types.InlineKeyboardButton(text='Отправить в ответ',url=f"https://t.me/{bot_name}?start={from_user_data[1]}")
-            markup.add(item1)
-
-            if (validate_send_back(from_user_data[1], chat_id)):
-                await bot.send_message(chat_id,f'📸 Пользователь <b>{from_user_data[2]}</b> поделился с вами фотографиями:',parse_mode='html')
-                await bot.send_media_group(chat_id, album)
-            else:
-                if from_user_data[1] not in tmp_arr_usr_list:
-                    await bot.send_message(chat_id,f'📸 Пользователь <b>{from_user_data[2]}</b> поделился с вами фотографиями:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию ил с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup, parse_mode='html')
-                    tmp_arr_usr_list.append(from_user_data[1])
-
-
-async def get_video_user_album(chat_id):
-    cursor = connect.cursor()
-
-    # SEND SINGLE PHOTO
-
-    cursor.execute("SELECT * FROM images WHERE to_id=? AND media_type=?", (chat_id, "video",))
-
-    if len(cursor.fetchall()) == 0:
-        await bot.send_message(chat_id,"📂 Ваша галерея пустая\n\nЧто бы её пополнить нужно поделится уникальной ссылкой\nДля этого перейдите в раздел <b>Собрать фото и видео с друзей</b>",parse_mode='html')
-        return
-
-    cursor.execute("SELECT id_image, from_id FROM images WHERE to_id=? AND media_group_id IS NULL AND media_type=?",(chat_id, "video",))
-    single_photo = cursor.fetchall()
-
-    if len(single_photo) != 0:
-        tmp_arr_usr_list = []
-        for photo_id in single_photo:
-
-            # GET USERNAME WITH FROM_ID
-            from_user_data = get_user(photo_id[1])
-
-            markup = types.InlineKeyboardMarkup()
-            item1 = types.InlineKeyboardButton(text='Отправить в ответ',url=f"https://t.me/{bot_name}?start={from_user_data[1]}")
-            markup.add(item1)
-
-            if (validate_send_back(photo_id[1], chat_id)):
-                await bot.send_message(chat_id, f'📸 Пользователь <b>{from_user_data[2]}</b> поделился с вами видео:',parse_mode='HTML')
-                await bot.send_video(chat_id, photo_id[0])
-            else:
-                if photo_id[1] not in tmp_arr_usr_list:
-                    await bot.send_message(chat_id,f'📸 Пользователь {from_user_data[2]} поделился с вами фотографией:\n\nЧто бы её увидеть отправьте ему в ответ любую фотографию ил с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup)
-                    tmp_arr_usr_list.append(photo_id[1])
-
-    # SEND MULTI PHOTO
-    cursor.execute(
-        "SELECT DISTINCT media_group_id FROM images WHERE to_id=? AND media_group_id IS NOT NULL AND media_type=?",(chat_id, "video",))
-    all_user_photo_groups = cursor.fetchall()
-
-    if len(all_user_photo_groups) != 0:
-
-        tmp_arr_usr_list = []
-
-        for group_id in all_user_photo_groups:
-            album = []
-
-            cursor.execute("SELECT id_image, from_id, to_id FROM images WHERE media_group_id=? AND media_type=?",(group_id[0], "video",))
-            images = cursor.fetchall()
-
-            for image_id in images:
-                album.append(types.InputMediaVideo(image_id[0]))
-
-            # GET USERNAME WITH FROM_ID
-            from_user_data = get_user(images[0][1])
-
-            markup = types.InlineKeyboardMarkup()
-            item1 = types.InlineKeyboardButton(text='Отправить в ответ',url=f"https://t.me/{bot_name}?start={from_user_data[1]}")
-            markup.add(item1)
-
-            if (validate_send_back(from_user_data[1], chat_id)):
-                await bot.send_message(chat_id,f'📸 Пользователь <b>{from_user_data[2]}</b> поделился с вами фотографиями:',parse_mode='html')
-                await bot.send_media_group(chat_id, album)
-            else:
-                if from_user_data[1] not in tmp_arr_usr_list:
-                    await bot.send_message(chat_id,f'📸 Пользователь <b>{from_user_data[2]}</b> поделился с вами фотографиями:\n\nЧто бы их увидеть отправьте ему в ответ любую фотографию ил с его участием\n\nОтправте их по его ссылке или нажмите на кнопку"Отправить в ответ"',reply_markup=markup, parse_mode='html')
-                    tmp_arr_usr_list.append(from_user_data[1])
-
+            for single_media in media_arr:
+                if single_media[1] == "photo":
+                    media_group_data.append(types.InputMediaPhoto(single_media[0]))
+                else:
+                    media_group_data.append(types.InputMediaVideo(single_media[0]))
+                
+    return media_group_data
 
 # Очистить БД
 @bot.message_handler(commands=['get_photos'])
@@ -333,13 +337,11 @@ async def get_photos(message):
     else:
         await bot.send_message(message.chat.id, "🔒 You are not admin")
 
-
 # def validateUser(chat_id):
 #     current_user = get_user(chat_id)
 #     if current_user[5] == 30:
 #         bot.send_message(chat_id, "You are blocked! Huilo")
 #         return
-
 
 # Меню Старт
 @bot.message_handler(commands=['start'])
@@ -368,7 +370,6 @@ async def start(message):
     else:
         await send_menu_message(message.chat.id,'<b>Приветствуем тебя дорогой друг!👋</b>\nС помощью нашего бота ты можешь со всех своих друзей собрать совместные фото  с тобой и вспомнить забытые и смешные моменты!\n\n<b>Как это работает:</b>\n1️⃣Нажмите кнопку в меню <b>"Собрать фото и видео с друзей"</b>\n2️⃣Выберите <b>"Поделиться историей Instagram"</b>\n3️⃣﻿﻿Добавьте себе историю в инстаграм как указано инструкции по кнопке\n4️⃣Все фото которые отправят друзья мы будем отображать в разделе <b>"Моя галерея"</b>\n\nКак только кто-то из твоих друзей отправит что-то по ссылке мы обязательно тебе об этом скажем😊')
 
-
 @bot.message_handler(content_types=['text'])
 async def chat_message(message):
     User = auth_user(message.from_user.id, message.from_user.username or message.from_user.first_name)
@@ -379,8 +380,9 @@ async def chat_message(message):
 
     ref_id = message.chat.id
     if message.text == '🌁 Моя галерея':
-        await get_photo_user_album(message.chat.id)
-        await get_video_user_album(message.chat.id)
+        await generate_collection_senders(message.chat.id)
+        # await get_photo_user_album(message.chat.id)
+        # await get_video_user_album(message.chat.id)
     elif message.text == '📨 Обратная связь':
         markup_info = types.InlineKeyboardMarkup(row_width=2)
         item_info1 = types.InlineKeyboardButton(text='📬 Support', callback_data='instagram_info',url='https://t.me/friendme_support')
@@ -405,7 +407,6 @@ async def chat_message(message):
     amplitude_track("btn_click", User[1], {
         "button_name": str(message.text)
     })
-
 
 @bot.message_handler(content_types=['video'])
 async def video(message):
@@ -481,11 +482,6 @@ async def video(message):
 
             # await bot.send_video(support_admin, image_id, caption="[Admin] Фото от "+ User[2] +" к "+friendUser[2])
 
-
-# @bot.message_handler(content_types=['video'])
-# async def video(message):
-#     await bot.send_message(message.chat.id, f"<b> К сожалению мы принимаем только фото</b>", parse_mode='html')
-
 @bot.message_handler(content_types=['photo'])
 async def photo(message):
     # Получаем данные пользователя из БД, если их нету то создаём
@@ -558,10 +554,18 @@ async def photo(message):
 
             await bot.send_photo(support_admin, image_id, caption="[Admin] Фото от " + User[2] + " к " + friendUser[2])
 
-
 @bot.callback_query_handler(func=lambda callback: callback.data)
-async def callback_my_photo(callback):
+async def callback(callback):
     User = auth_user(callback.message.chat.id,callback.message.from_user.username or callback.message.from_user.first_name)
+
+    if User[3] is not None:
+        await only_photo(User)
+        return
+
+    if (callback.data.find(":") != -1):
+        command = callback.data.split(":")
+        if command[0] == "photo_m_element_id":
+            await generate_collection_senders(callback.message.chat.id, command[1], callback, current_element_count=command[2])
 
     if callback.data == 'cancel_send_photo':
 
@@ -578,16 +582,9 @@ async def callback_my_photo(callback):
 
         return
 
-    if User[3] is not None:
-        await only_photo(User)
-        return
-
     ref_id = callback.message.chat.id
 
-    if callback.data == 'itemmyphoto1':
-        # await get_photo_user_album(callback.message.chat.id)
-        pass
-    elif callback.data == 'itemmyphoto2':
+    if callback.data == 'itemmyphoto2':
         markup = types.InlineKeyboardMarkup(row_width=2)
         item_my_photo1 = types.InlineKeyboardButton(text='Отправить в ответ', callback_data='itemmyphoto1')
         item_my_photo2 = types.InlineKeyboardButton(text='Далее', callback_data='itemmyphoto2')
@@ -679,7 +676,6 @@ async def callback_my_photo(callback):
 async def error_command(chat_id):
     return await bot.send_message(chat_id, '<b>⛔ Произошла ошибка, данная команда недоступна!</b>', parse_mode='html')
 
-
 async def start_with_ref_link(chat_id, ref_id):
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton(text='❌ Отмена', callback_data='cancel_send_photo'))
@@ -687,11 +683,9 @@ async def start_with_ref_link(chat_id, ref_id):
     if User is not None:
         await bot.send_message(chat_id,f'<b>Приветствуем тебя дорогой друг!👋</b>\nС помощью нашего бота ты можешь со всех своих друзей собрать совместные фото с тобой и вспомнить забытые и смешные моменты!\n\n<b>Ты перешёл по ссылке {User[2]} отправь сюда в чат ваши совместные фото, мы их перешлём к {User[2]}, но чтобы он что-то увидел, ему нужно будет обязательно чем-то поделиться с тобой в ответ 🙂</b>',parse_mode='html', reply_markup=markup)
 
-
 async def only_photo(User):
     await bot.send_message(User[1], "⚠️ <b>Закончите отправку изображений или нажмите «❌Отмена»</b>", parse_mode='html')
     await start_with_ref_link(User[1], User[3])
-
 
 async def send_menu_message(chat_id, message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
