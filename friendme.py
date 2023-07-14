@@ -1,7 +1,7 @@
 from telebot.async_telebot import AsyncTeleBot
 import io
 import random
-import sqlite3
+import psycopg2
 import datetime
 from telebot import types
 import os
@@ -17,14 +17,20 @@ sys.stdin.reconfigure(encoding='utf-8')
 load_dotenv(find_dotenv())
 print('bot is activated 🗸')
 
-path_to_db = './db/friendMe.db'
+# Connect to the database
+connect = psycopg2.connect(
+    host=os.getenv('POSTGRES_HOST'),
+    port=5432,
+    database=os.getenv('POSTGRES_DB'),
+    user=os.getenv('POSTGRES_USER'),
+    password=os.getenv('POSTGRES_PASSWORD'),
+)
 
 if (os.getenv('isDocker')):
     path_to_db = '/root/db/friendMe.db'
 
 amplitude = Amplitude(os.getenv('AMP_TOKEN'))
 bot = AsyncTeleBot(os.getenv('BOT_TOKEN'))
-connect = sqlite3.connect(path_to_db, check_same_thread=False)
 bot_name = os.getenv('bot_name')
 admin_id = 1900666417
 admin_id2 = 522380141
@@ -57,26 +63,10 @@ def amplitude_track(event_name, chat_id, event_props, user_props=None):
 def init_bot():
     cursor = connect.cursor()
 
-    cursor.execute("""CREATE TABLE IF NOT EXISTS users(
-               id integer PRIMARY KEY AUTOINCREMENT,
-               tg_id integer,
-               username varchar,
-               ref_id number,
-               date date,
-               status number,
-               last_receiver_id number
-           )""")
+    cursor.execute("CREATE TABLE IF NOT EXISTS users(id SERIAL PRIMARY KEY, tg_id integer, username varchar, ref_id BIGINT, date date, status integer, last_receiver_id BIGINT)")
     connect.commit()
 
-    cursor.execute("""CREATE TABLE IF NOT EXISTS images(
-            id integer PRIMARY KEY AUTOINCREMENT,
-            id_image integer,
-            from_id integer,
-            media_group_id integer,
-            to_id integer,
-            media_type string,
-            date date
-    )""")
+    cursor.execute("CREATE TABLE IF NOT EXISTS images(id SERIAL PRIMARY KEY, id_image integer, from_id integer, media_group_id integer, to_id integer, media_type varchar, date date)")
     connect.commit()
 
     # child_loop = asyncio.new_event_loop()
@@ -116,13 +106,13 @@ async def admin_panel(message):
 
 def get_user(chat_id):
     cursor = connect.cursor()
-    cursor.execute(f"SELECT * FROM users WHERE tg_id=?", (chat_id,))
+    cursor.execute(f"SELECT * FROM users WHERE tg_id=%s", (chat_id,))
     return cursor.fetchone()
 
 
 def auth_user(chat_id, username, ref_id=None, isPhoto=False):
     cursor = connect.cursor()
-    cursor.execute("SELECT tg_id FROM users WHERE tg_id=?", (chat_id,))
+    cursor.execute("SELECT tg_id FROM users WHERE tg_id=%s", (chat_id,))
     data = cursor.fetchone()
 
     if data is None:
@@ -140,7 +130,7 @@ def auth_user(chat_id, username, ref_id=None, isPhoto=False):
                             "reg_time": datetime.datetime.now(),
                         })
 
-        cursor.execute("INSERT INTO users VALUES(?,?,?,?,?,?,?);",(None, chat_id, username, ref_id, datetime.datetime.now(), 10, None))
+        cursor.execute("INSERT INTO users (tg_id, username, ref_id, date, status) VALUES(%s,%s,%s,%s,%s);",(chat_id, username, ref_id, datetime.datetime.now(), 10))
         connect.commit()
 
         print("REG NEW USER: ", username, " | ", chat_id)
@@ -148,16 +138,16 @@ def auth_user(chat_id, username, ref_id=None, isPhoto=False):
 
     else:
         if ref_id is not None:
-            cursor.execute("UPDATE users SET ref_id=? WHERE tg_id=?", (ref_id, chat_id))
+            cursor.execute("UPDATE users SET ref_id=%s WHERE tg_id=%s", (ref_id, chat_id))
             connect.commit()
 
-    cursor.execute("SELECT * FROM users WHERE tg_id=?", (chat_id,))
+    cursor.execute("SELECT * FROM users WHERE tg_id=%s", (chat_id,))
     User = cursor.fetchone()
 
     # НЕ ТРОГАТЬ!!!
     if (isPhoto == False):
         if User[6] != None:
-            cursor.execute("UPDATE users SET last_receiver_id=? WHERE tg_id=?", (None, User[1],))
+            cursor.execute("UPDATE users SET last_receiver_id=%s WHERE tg_id=%s", (None, User[1],))
             connect.commit()
 
     return User
@@ -166,7 +156,7 @@ def auth_user(chat_id, username, ref_id=None, isPhoto=False):
 
 def validate_send_back(sender_id, receiver_id):
     cursor = connect.cursor()
-    cursor.execute(f"SELECT * FROM images WHERE to_id=? and from_id=?", (sender_id, receiver_id,))
+    cursor.execute(f"SELECT * FROM images WHERE to_id=%s and from_id=%s", (sender_id, receiver_id,))
 
     return len(cursor.fetchall()) != 0
 
@@ -175,6 +165,12 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
     markup = types.InlineKeyboardMarkup(row_width=2)
 
     cursor = connect.cursor()
+
+    cursor.execute("SELECT * FROM images WHERE to_id=%s", (chat_id,))
+
+    if len(cursor.fetchall()) == 0:
+        await bot.send_message(chat_id, "📂 Ваша галерея пустая\n\nЧто бы её пополнить нужно поделится уникальной ссылкой\nДля этого перейдите в раздел <b>Собрать фото с друзей</b>",parse_mode='html')
+        return
 
     isFirst = False
     isLast = False
@@ -188,7 +184,7 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
     if from_id == None:
 
         isFirst = True
-        cursor.execute("SELECT from_id FROM images WHERE to_id = ? ORDER BY from_id LIMIT 2", (chat_id, ))
+        cursor.execute("SELECT from_id FROM images WHERE to_id = %s ORDER BY from_id LIMIT 2", (chat_id, ))
         elements = cursor.fetchall()
 
         if (len(elements) == 2):
@@ -199,15 +195,15 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
             current_element = elements[0][0]
 
     elif from_id != None:
-        cursor.execute("SELECT from_id FROM images WHERE from_id = ? AND to_id = ? ORDER BY from_id LIMIT 1", (from_id, chat_id, ))
+        cursor.execute("SELECT from_id FROM images WHERE from_id = %s AND to_id = %s ORDER BY from_id LIMIT 1", (from_id, chat_id, ))
         current_element = cursor.fetchone()
 
         if current_element != None:
 
-            cursor.execute("SELECT from_id FROM images WHERE from_id < ? AND to_id = ? ORDER BY from_id LIMIT 1", (from_id, chat_id, ))
+            cursor.execute("SELECT from_id FROM images WHERE from_id < %s AND to_id = %s ORDER BY from_id LIMIT 1", (from_id, chat_id, ))
             previous_element = cursor.fetchone()
 
-            cursor.execute("SELECT from_id FROM images WHERE from_id > ? AND to_id = ? ORDER BY from_id LIMIT 1", (from_id, chat_id, ))
+            cursor.execute("SELECT from_id FROM images WHERE from_id > %s AND to_id = %s ORDER BY from_id LIMIT 1", (from_id, chat_id, ))
             next_element = cursor.fetchone()
 
             if previous_element == None:
@@ -274,12 +270,12 @@ def get_media_from_user(chat_id, from_id):
 
     # SEND SINGLE MEDIA
 
-    cursor.execute("SELECT * FROM images WHERE to_id=? AND from_id=?", (chat_id, from_id,))
+    cursor.execute("SELECT * FROM images WHERE to_id=%s AND from_id=%s", (chat_id, from_id,))
 
     if len(cursor.fetchall()) == 0:
         return
 
-    cursor.execute("SELECT id_image, media_type FROM images WHERE to_id=? AND from_id=? AND media_group_id IS NULL",(chat_id, from_id,))
+    cursor.execute("SELECT id_image, media_type FROM images WHERE to_id=%s AND from_id=%s AND media_group_id IS NULL",(chat_id, from_id,))
     media_arr = cursor.fetchall()
 
     if len(media_arr) != 0:
@@ -292,14 +288,14 @@ def get_media_from_user(chat_id, from_id):
 
     # SEND MULTI MEDIA
     cursor.execute(
-        "SELECT DISTINCT media_group_id FROM images WHERE to_id=? AND from_id=? AND media_group_id IS NOT NULL",(chat_id, from_id,))
+        "SELECT DISTINCT media_group_id FROM images WHERE to_id=%s AND from_id=%s AND media_group_id IS NOT NULL",(chat_id, from_id,))
     all_user_photo_groups = cursor.fetchall()
 
     if len(all_user_photo_groups) != 0:
 
         for group_id in all_user_photo_groups:
 
-            cursor.execute("SELECT id_image, media_type FROM images WHERE media_group_id=?",(group_id[0],))
+            cursor.execute("SELECT id_image, media_type FROM images WHERE media_group_id=%s",(group_id[0],))
             media_arr = cursor.fetchall()
 
             for single_media in media_arr:
@@ -392,7 +388,7 @@ async def chat_message(message):
     elif message.text == '📸 Собрать фото и видео с друзей':
         markup = types.InlineKeyboardMarkup(row_width=1)
         item1 = types.InlineKeyboardButton(text='Поделиться в Instagram Stories', callback_data='share1')
-        item2 = types.InlineKeyboardButton('Поделиться в Telegram',switch_inline_query=f'\n\n👋 Приветствую! Я бы хотел поделиться с вами уникальной ссылкой 🔗: https://t.me/{bot_name}?start={ref_id}\n\nБлагодаря этой ссылке, ты сможешь легко загружать свои фотографии, и я с радостью их получу. Давай начнем делиться восхитительными снимками вместе! 🤩')
+        item2 = types.InlineKeyboardButton('Поделиться в Telegram',switch_inline_query=f'\n\n👋 Приветствую! Я бы хотел поделиться с вами уникальной ссылкой 🔗: https://t.me/{bot_name}%sstart={ref_id}\n\nБлагодаря этой ссылке, ты сможешь легко загружать свои фотографии, и я с радостью их получу. Давай начнем делиться восхитительными снимками вместе! 🤩')
         item3 = types.InlineKeyboardButton(text='Показать ссылку в чате', callback_data='share3')
         markup.add(item1, item2, item3)
         await bot.send_message(message.chat.id,'<b>⤴️ Чтобы собрать совместные фотографии с друзей, вам нужно поделиться с ними уникальной ссылкой, выберите удобный для вас способ ниже:</b>',parse_mode='html', reply_markup=markup)
@@ -436,18 +432,18 @@ async def video(message):
 
         # Добавляем фотографию в базу данных
         cursor = connect.cursor()
-        cursor.execute("INSERT INTO images VALUES(?,?,?,?,?,?,?);",(None, image_id, from_id, media_group_id, ref_id, "video", date_image))
+        cursor.execute("INSERT INTO images (id_image, from_id, media_group_id, to_id, media_type, date) VALUES(%s,%s,%s,%s,%s,%s);",(image_id, from_id, media_group_id, ref_id, "video", date_image))
         connect.commit()
 
         # BTN SEND MORE
 
         markup = types.InlineKeyboardMarkup()
         markup.add(
-            types.InlineKeyboardButton(text='💬 Отправить ещё', url=f"https://t.me/{bot_name}?start={friendUser[1]}"))
+            types.InlineKeyboardButton(text='💬 Отправить ещё', url=f"https://t.me/{bot_name}%sstart={friendUser[1]}"))
         # Проверяем буфер
 
         if media_group_id is not None:
-            cursor.execute("SELECT * FROM images WHERE media_group_id=?", (media_group_id,))
+            cursor.execute("SELECT * FROM images WHERE media_group_id=%s", (media_group_id,))
             data = cursor.fetchall()
 
             if len(data) <= 1:
@@ -460,7 +456,7 @@ async def video(message):
                         "to_user_id": ref_id
                     })
 
-                cursor.execute("UPDATE users SET ref_id=?, last_receiver_id=? WHERE tg_id=?", (None, ref_id, User[1],))
+                cursor.execute("UPDATE users SET ref_id=%s, last_receiver_id=%s WHERE tg_id=%s", (None, ref_id, User[1],))
                 connect.commit()
 
                 await bot.send_video(support_admin, image_id,
@@ -477,7 +473,7 @@ async def video(message):
                 "to_user_id": ref_id
             })
 
-            cursor.execute("UPDATE users SET ref_id=? WHERE tg_id=?", (None, User[1],))
+            cursor.execute("UPDATE users SET ref_id=%s WHERE tg_id=%s", (None, User[1],))
             connect.commit()
 
             # await bot.send_video(support_admin, image_id, caption="[Admin] Фото от "+ User[2] +" к "+friendUser[2])
@@ -510,18 +506,18 @@ async def photo(message):
 
         # Добавляем фотографию в базу данных
         cursor = connect.cursor()
-        cursor.execute("INSERT INTO images VALUES(?,?,?,?,?,?,?);",(None, image_id, from_id, media_group_id, ref_id, "photo", date_image))
+        cursor.execute("INSERT INTO images (id_image, from_id, media_group_id, to_id, media_type, date) VALUES(%s,%s,%s,%s,%s,%s);",(image_id, from_id, media_group_id, ref_id, "photo", date_image))
         connect.commit()
 
         # BTN SEND MORE
 
         markup = types.InlineKeyboardMarkup()
         markup.add(
-            types.InlineKeyboardButton(text='💬 Отправить ещё', url=f"https://t.me/{bot_name}?start={friendUser[1]}"))
+            types.InlineKeyboardButton(text='💬 Отправить ещё', url=f"https://t.me/{bot_name}%sstart={friendUser[1]}"))
         # Проверяем буфер
 
         if media_group_id is not None:
-            cursor.execute("SELECT * FROM images WHERE media_group_id=?", (media_group_id,))
+            cursor.execute("SELECT * FROM images WHERE media_group_id=%s", (media_group_id,))
             data = cursor.fetchall()
 
             if len(data) <= 1:
@@ -534,7 +530,7 @@ async def photo(message):
                         "to_user_id": ref_id
                     })
 
-                cursor.execute("UPDATE users SET ref_id=?, last_receiver_id=? WHERE tg_id=?", (None, ref_id, User[1],))
+                cursor.execute("UPDATE users SET ref_id=%s, last_receiver_id=%s WHERE tg_id=%s", (None, ref_id, User[1],))
                 connect.commit()
 
                 await bot.send_photo(support_admin, image_id,
@@ -549,7 +545,7 @@ async def photo(message):
                 "to_user_id": ref_id
             })
 
-            cursor.execute("UPDATE users SET ref_id=? WHERE tg_id=?", (None, User[1],))
+            cursor.execute("UPDATE users SET ref_id=%s WHERE tg_id=%s", (None, User[1],))
             connect.commit()
 
             await bot.send_photo(support_admin, image_id, caption="[Admin] Фото от " + User[2] + " к " + friendUser[2])
@@ -575,7 +571,7 @@ async def callback(callback):
         await send_menu_message(callback.message.chat.id, "❌ Отмена")
 
         cursor = connect.cursor()
-        cursor.execute("UPDATE users SET ref_id=? WHERE tg_id=?", (None, callback.message.chat.id,))
+        cursor.execute("UPDATE users SET ref_id=%s WHERE tg_id=%s", (None, callback.message.chat.id,))
         connect.commit()
 
         await bot.send_message(callback.message.chat.id,'<b>Приветствуем тебя дорогой друг!👋</b>\nС помощью нашего бота ты можешь со всех своих друзей собрать совместные фото с тобой и вспомнить забытые и смешные моменты!\n\n<b>Как это работает:</b>\n1️⃣Нажмите кнопку в меню "Собрать фото и видео с друзей"\n2️⃣Выберите "Поделиться историей Instagram"\n3️⃣﻿﻿Добавьте себе историю в инстаграм как указано инструкции по кнопке\n4️⃣Все фото которые отправят друзья мы будем отображать в разделе "Моя галерея"\n\nКак только кто-то из твоих друзей отправит что-то по ссылке мы обязательно тебе об этом скажем😊', parse_mode='html')
@@ -607,7 +603,7 @@ async def callback(callback):
     elif callback.data == 'share2':
         await bot.send_message(callback.message.chat.id, '')
     elif callback.data == 'share3':
-        await bot.send_message(callback.message.chat.id, f'https://t.me/{bot_name}?start={ref_id}')
+        await bot.send_message(callback.message.chat.id, f'https://t.me/{bot_name}%sstart={ref_id}')
     elif callback.data == 'item_next1':
         media = open("images/instphoto.png", "rb")
         markup = types.InlineKeyboardMarkup()
@@ -641,7 +637,7 @@ async def callback(callback):
         item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back4')
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_share4')
         markup.add(item_back, item_next)
-        await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media,caption=f"3️⃣В поле URL введите свою уникальную ссылку:⤵️\n\nhttps://t.me/{bot_name}?start={ref_id}"),reply_markup=markup)
+        await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media,caption=f"3️⃣В поле URL введите свою уникальную ссылку:⤵️\n\nhttps://t.me/{bot_name}%sstart={ref_id}"),reply_markup=markup)
     elif callback.data == 'item_back4':
         markup = types.InlineKeyboardMarkup()
         item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back3')
@@ -661,8 +657,8 @@ async def callback(callback):
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_share4')
         markup.add(item_back, item_next)
         media = open('images/inst3.png', 'rb')
-        await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media,caption=f"3️⃣Добавьте стикер с уникальной ссылкой:⤵️\n\nhttps://t.me/{bot_name}?start={ref_id}"),reply_markup=markup)
-        await bot.edit_message_caption(chat_id=callback.message.chat.id, message_id=callback.message.message_id,caption=f"3️⃣Добавьте стикер с уникальной ссылкой:⤵️\n\nhttps://t.me/{bot_name}?start={ref_id}",reply_markup=markup)
+        await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media,caption=f"3️⃣Добавьте стикер с уникальной ссылкой:⤵️\n\nhttps://t.me/{bot_name}%sstart={ref_id}"),reply_markup=markup)
+        await bot.edit_message_caption(chat_id=callback.message.chat.id, message_id=callback.message.message_id,caption=f"3️⃣Добавьте стикер с уникальной ссылкой:⤵️\n\nhttps://t.me/{bot_name}%sstart={ref_id}",reply_markup=markup)
     elif callback.data == 'item_admin1':
         cursor = connect.cursor()
         cursor.execute("select count(*) from users")

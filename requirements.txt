@@ -2,3 +2,4 @@ pyTelegramBotAPI
 python-dotenv
 aiohttp
 amplitude-analytics
+psycopg2-binary
