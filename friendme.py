@@ -63,10 +63,10 @@ def amplitude_track(event_name, chat_id, event_props, user_props=None):
 def init_bot():
     cursor = connect.cursor()
 
-    cursor.execute("CREATE TABLE IF NOT EXISTS users(id SERIAL PRIMARY KEY, tg_id integer, username varchar, ref_id BIGINT, date date, status integer, last_receiver_id BIGINT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS users(id SERIAL PRIMARY KEY, tg_id bigint, username varchar, ref_id BIGINT, date date, status integer, last_receiver_id bigint)")
     connect.commit()
 
-    cursor.execute("CREATE TABLE IF NOT EXISTS images(id SERIAL PRIMARY KEY, id_image integer, from_id integer, media_group_id integer, to_id integer, media_type varchar, date date)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS images(id SERIAL PRIMARY KEY, id_image text, from_id bigint, media_group_id bigint, to_id bigint, media_type varchar, date date)")
     connect.commit()
 
     # child_loop = asyncio.new_event_loop()
@@ -388,7 +388,7 @@ async def chat_message(message):
     elif message.text == '📸 Собрать фото и видео с друзей':
         markup = types.InlineKeyboardMarkup(row_width=1)
         item1 = types.InlineKeyboardButton(text='Поделиться в Instagram Stories', callback_data='share1')
-        item2 = types.InlineKeyboardButton('Поделиться в Telegram',switch_inline_query=f'\n\n👋 Приветствую! Я бы хотел поделиться с вами уникальной ссылкой 🔗: https://t.me/{bot_name}%sstart={ref_id}\n\nБлагодаря этой ссылке, ты сможешь легко загружать свои фотографии, и я с радостью их получу. Давай начнем делиться восхитительными снимками вместе! 🤩')
+        item2 = types.InlineKeyboardButton('Поделиться в Telegram',switch_inline_query=f'\n\n👋 Приветствую! Я бы хотел поделиться с вами уникальной ссылкой 🔗: https://t.me/{bot_name}?start={ref_id}\n\nБлагодаря этой ссылке, ты сможешь легко загружать свои фотографии, и я с радостью их получу. Давай начнем делиться восхитительными снимками вместе! 🤩')
         item3 = types.InlineKeyboardButton(text='Показать ссылку в чате', callback_data='share3')
         markup.add(item1, item2, item3)
         await bot.send_message(message.chat.id,'<b>⤴️ Чтобы собрать совместные фотографии с друзей, вам нужно поделиться с ними уникальной ссылкой, выберите удобный для вас способ ниже:</b>',parse_mode='html', reply_markup=markup)
@@ -439,7 +439,7 @@ async def video(message):
 
         markup = types.InlineKeyboardMarkup()
         markup.add(
-            types.InlineKeyboardButton(text='💬 Отправить ещё', url=f"https://t.me/{bot_name}%sstart={friendUser[1]}"))
+            types.InlineKeyboardButton(text='💬 Отправить ещё', url=f"https://t.me/{bot_name}?start={friendUser[1]}"))
         # Проверяем буфер
 
         if media_group_id is not None:
@@ -513,7 +513,7 @@ async def photo(message):
 
         markup = types.InlineKeyboardMarkup()
         markup.add(
-            types.InlineKeyboardButton(text='💬 Отправить ещё', url=f"https://t.me/{bot_name}%sstart={friendUser[1]}"))
+            types.InlineKeyboardButton(text='💬 Отправить ещё', url=f"https://t.me/{bot_name}?start={friendUser[1]}"))
         # Проверяем буфер
 
         if media_group_id is not None:
@@ -603,7 +603,7 @@ async def callback(callback):
     elif callback.data == 'share2':
         await bot.send_message(callback.message.chat.id, '')
     elif callback.data == 'share3':
-        await bot.send_message(callback.message.chat.id, f'https://t.me/{bot_name}%sstart={ref_id}')
+        await bot.send_message(callback.message.chat.id, f'https://t.me/{bot_name}?start={ref_id}')
     elif callback.data == 'item_next1':
         media = open("images/instphoto.png", "rb")
         markup = types.InlineKeyboardMarkup()
@@ -637,7 +637,7 @@ async def callback(callback):
         item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back4')
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_share4')
         markup.add(item_back, item_next)
-        await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media,caption=f"3️⃣В поле URL введите свою уникальную ссылку:⤵️\n\nhttps://t.me/{bot_name}%sstart={ref_id}"),reply_markup=markup)
+        await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media,caption=f"3️⃣В поле URL введите свою уникальную ссылку:⤵️\n\nhttps://t.me/{bot_name}?start={ref_id}"),reply_markup=markup)
     elif callback.data == 'item_back4':
         markup = types.InlineKeyboardMarkup()
         item_back = types.InlineKeyboardButton(text='Назад', callback_data='item_back3')
@@ -657,8 +657,8 @@ async def callback(callback):
         item_next = types.InlineKeyboardButton(text='Далее', callback_data='item_share4')
         markup.add(item_back, item_next)
         media = open('images/inst3.png', 'rb')
-        await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media,caption=f"3️⃣Добавьте стикер с уникальной ссылкой:⤵️\n\nhttps://t.me/{bot_name}%sstart={ref_id}"),reply_markup=markup)
-        await bot.edit_message_caption(chat_id=callback.message.chat.id, message_id=callback.message.message_id,caption=f"3️⃣Добавьте стикер с уникальной ссылкой:⤵️\n\nhttps://t.me/{bot_name}%sstart={ref_id}",reply_markup=markup)
+        await bot.edit_message_media(chat_id=callback.message.chat.id, message_id=callback.message.message_id,media=types.InputMediaPhoto(media,caption=f"3️⃣Добавьте стикер с уникальной ссылкой:⤵️\n\nhttps://t.me/{bot_name}?start={ref_id}"),reply_markup=markup)
+        await bot.edit_message_caption(chat_id=callback.message.chat.id, message_id=callback.message.message_id,caption=f"3️⃣Добавьте стикер с уникальной ссылкой:⤵️\n\nhttps://t.me/{bot_name}?start={ref_id}",reply_markup=markup)
     elif callback.data == 'item_admin1':
         cursor = connect.cursor()
         cursor.execute("select count(*) from users")
