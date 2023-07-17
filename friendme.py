@@ -281,7 +281,7 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
 
 def get_media_from_user(chat_id, from_id):
     cursor = connect.cursor()
-    print("inside id:", chat_id)
+
     i = 0
     gp = 0
     media_group_data = []
@@ -296,6 +296,8 @@ def get_media_from_user(chat_id, from_id):
 
     cursor.execute("SELECT id_image, media_type FROM images WHERE to_id=%s AND from_id=%s AND media_group_id IS NULL",(chat_id, from_id,))
     media_arr = cursor.fetchall()
+
+    print("media_arr:", media_arr)
 
     if len(media_arr) != 0:
 
@@ -321,16 +323,14 @@ def get_media_from_user(chat_id, from_id):
         "SELECT DISTINCT media_group_id FROM images WHERE to_id=%s AND from_id=%s AND media_group_id IS NOT NULL",(chat_id, from_id,))
     all_user_photo_groups = cursor.fetchall()
 
+    print("all_user_photo_groups: ", all_user_photo_groups)
     if len(all_user_photo_groups) != 0:
-
-        print("HELX: ", media_group_tmp_arr)
 
         for group_id in all_user_photo_groups:
 
             cursor.execute("SELECT id_image, media_type FROM images WHERE media_group_id=%s",(group_id[0],))
             media_arr = cursor.fetchall()
 
-            i = 0
             for single_media in media_arr:
                 if (i >= 15):
                     i = 0
