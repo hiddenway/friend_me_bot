@@ -161,7 +161,7 @@ def validate_send_back(sender_id, receiver_id):
     return len(cursor.fetchall()) != 0
 
 
-async def generate_collection_senders(chat_id, from_id=None, callback=None, current_element_count=None):
+async def generate_collection_senders(chat_id, from_id=None, callback=None, current_element_count=None, middle_level_count=None):
     markup = types.InlineKeyboardMarkup(row_width=2)
 
     cursor = connect.cursor()
@@ -227,13 +227,20 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
 
     print("MEDIA INSIDE: ", media)
 
-    media = media[0]
+    if middle_level_count != None:
+        media = media[middle_level_count]
+    else:
+        media = media[0]
 
     if (isFirst is False):
         item_previous = types.InlineKeyboardButton(text='<<', callback_data='photo_m_element_id:'+str(previous_element)+':'+str(len(media)))
 
     elif (isLast is False):
-        item_next = types.InlineKeyboardButton(text='>>', callback_data='photo_m_element_id:'+str(next_element)+':'+str(len(media)))
+        middle_level_count+=1
+        if len(media[middle_level_count]) == 0:
+            item_next = types.InlineKeyboardButton(text='>>', callback_data='photo_m_element_id:'+str(next_element)+':'+str(len(media)))
+        else:
+            item_next = types.InlineKeyboardButton(text='>>', callback_data='photo_m_element_id:'+str(next_element)+':'+str(len(media))+':'+str(middle_level_count))
 
     item_current = types.InlineKeyboardButton('Жалоба ', callback_data='photo_m_element_id_report:'+str(current_element))
 
@@ -588,7 +595,7 @@ async def callback(callback):
     if (callback.data.find(":") != -1):
         command = callback.data.split(":")
         if command[0] == "photo_m_element_id":
-            await generate_collection_senders(callback.message.chat.id, command[1], callback, current_element_count=command[2])
+            await generate_collection_senders(callback.message.chat.id, command[1], callback, current_element_count=command[2], middle_level_count=command[3])
 
     if callback.data == 'cancel_send_photo':
 
