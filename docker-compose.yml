@@ -17,7 +17,7 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - db_volume:/var/lib/postgresql/data
+      - db_postgres:/var/lib/postgresql/data
     networks:
       friend-me-network:
         ipv4_address: 10.5.0.5
@@ -44,3 +44,4 @@ services:
 
 volumes: 
     db_volume:
+    db_postgres:
