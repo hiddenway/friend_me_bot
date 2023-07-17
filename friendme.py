@@ -302,9 +302,6 @@ def get_media_from_user(chat_id, from_id):
             else:
                 media_group_tmp_arr.append(types.InputMediaVideo(single_media[0]))
 
-        media_group_data.insert(gp, media_group_tmp_arr)
-        media_group_tmp_arr = []
-
     # SEND MULTI MEDIA
     cursor.execute(
         "SELECT DISTINCT media_group_id FROM images WHERE to_id=%s AND from_id=%s AND media_group_id IS NOT NULL",(chat_id, from_id,))
@@ -317,7 +314,6 @@ def get_media_from_user(chat_id, from_id):
             cursor.execute("SELECT id_image, media_type FROM images WHERE media_group_id=%s",(group_id[0],))
             media_arr = cursor.fetchall()
 
-            i = 0
             for single_media in media_arr:
                 if (i >= 15):
                     i = 0
