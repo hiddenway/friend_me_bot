@@ -329,6 +329,7 @@ def get_media_from_user(chat_id, from_id):
             cursor.execute("SELECT id_image, media_type FROM images WHERE media_group_id=%s",(group_id[0],))
             media_arr = cursor.fetchall()
 
+            i = 0
             for single_media in media_arr:
                 if (i >= 15):
                     i = 0
