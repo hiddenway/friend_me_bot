@@ -349,8 +349,8 @@ def get_media_from_user(chat_id, from_id):
                     print("append video: ", media_group_tmp_arr)
                 i=+1
 
-            media_group_data.insert(gp, media_group_tmp_arr)
-            media_group_tmp_arr = []
+    media_group_data.insert(gp, media_group_tmp_arr)
+    media_group_tmp_arr = []
 
     return media_group_data
 
