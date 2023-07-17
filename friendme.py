@@ -246,6 +246,7 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
 
 
     print("isLast = ", isLast)
+    print("item_previous = ", item_previous)
     print("item_next = ", item_next)
 
     if item_previous is None:
