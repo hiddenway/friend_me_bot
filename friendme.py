@@ -313,9 +313,10 @@ def get_media_from_user(chat_id, from_id):
 
             if single_media[1] == "photo":
                 media_group_tmp_arr.append(types.InputMediaPhoto(single_media[0]))
+                print("append photo: ", media_group_tmp_arr)
             else:
                 media_group_tmp_arr.append(types.InputMediaVideo(single_media[0]))
-                print("append photo: ", media_group_tmp_arr)
+                print("append video: ", media_group_tmp_arr)
             i=+1
 
     # SEND MULTI MEDIA
