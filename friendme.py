@@ -268,7 +268,10 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
 def get_media_from_user(chat_id, from_id):
     cursor = connect.cursor()
 
+    i = 0
+    gp = 0
     media_group_data = []
+    media_group_tmp_arr = []
 
     # SEND SINGLE MEDIA
 
@@ -283,11 +286,21 @@ def get_media_from_user(chat_id, from_id):
     if len(media_arr) != 0:
 
         for single_media in media_arr:
-            if single_media[1] == "photo":
-                media_group_data.append(types.InputMediaPhoto(single_media[0]))
-            else:
-                media_group_data.append(types.InputMediaVideo(single_media[0]))
+            if (i >= 15):
+                i = 0
+                gp+= 1
 
+                media_group_data.insert(gp, media_group_tmp_arr)
+
+                media_group_tmp_arr = []
+
+            if single_media[1] == "photo":
+                media_group_tmp_arr.append(types.InputMediaPhoto(single_media[0]))
+            else:
+                media_group_tmp_arr.append(types.InputMediaVideo(single_media[0]))
+
+        media_group_data.insert(gp, media_group_tmp_arr)
+        
     # SEND MULTI MEDIA
     cursor.execute(
         "SELECT DISTINCT media_group_id FROM images WHERE to_id=%s AND from_id=%s AND media_group_id IS NOT NULL",(chat_id, from_id,))
@@ -301,10 +314,6 @@ def get_media_from_user(chat_id, from_id):
             media_arr = cursor.fetchall()
 
             i = 0
-            gp = 0
-            media_group_data = []
-            media_group_tmp_arr = []
-
             for single_media in media_arr:
                 if (i >= 15):
                     i = 0
@@ -315,10 +324,12 @@ def get_media_from_user(chat_id, from_id):
                     media_group_tmp_arr = []
 
                 if single_media[1] == "photo":
-                    media_group_tmp_arr.insert(gp).append(types.InputMediaPhoto(single_media[0]))
+                    media_group_tmp_arr.append(types.InputMediaPhoto(single_media[0]))
                 else:
-                    media_group_tmp_arr.insert(gp).append(types.InputMediaVideo(single_media[0]))
+                    media_group_tmp_arr.append(types.InputMediaVideo(single_media[0]))
                 i=+1
+
+            media_group_data.insert(gp, media_group_tmp_arr)
                 
     return media_group_data
 
