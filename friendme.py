@@ -233,7 +233,7 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
     if (isFirst is False):
         item_previous = types.InlineKeyboardButton(text='<<', callback_data='photo_m_element_id:'+str(previous_element)+':'+str(len(media)))
 
-    elif (isLast is False):
+    if (isLast is False):
         if middle_level_count != None:
             middle_level_count+=1
 
