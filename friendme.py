@@ -225,6 +225,7 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
 
     media = get_media_from_user(chat_id, current_element)
 
+    print("CURRENT ELEMENT: ", current_element)
     print("MEDIA INSIDE: ", media)
 
     if middle_level_count != None:
@@ -306,6 +307,8 @@ def get_media_from_user(chat_id, from_id):
                 media_group_data.insert(gp, media_group_tmp_arr)
                 media_group_tmp_arr = []
 
+                print("TMP ARR UPDATE: ", media_group_tmp_arr)
+
             if single_media[1] == "photo":
                 media_group_tmp_arr.append(types.InputMediaPhoto(single_media[0]))
             else:
@@ -330,6 +333,8 @@ def get_media_from_user(chat_id, from_id):
 
                     media_group_data.insert(gp, media_group_tmp_arr)
                     media_group_tmp_arr = []
+
+                    print("TMP ARR UPDATE: ", media_group_tmp_arr)
 
                 if single_media[1] == "photo":
                     media_group_tmp_arr.append(types.InputMediaPhoto(single_media[0]))
