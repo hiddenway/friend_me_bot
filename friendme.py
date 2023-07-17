@@ -297,8 +297,6 @@ def get_media_from_user(chat_id, from_id):
     cursor.execute("SELECT id_image, media_type FROM images WHERE to_id=%s AND from_id=%s AND media_group_id IS NULL",(chat_id, from_id,))
     media_arr = cursor.fetchall()
 
-    print("media_arr:", media_arr)
-
     if len(media_arr) != 0:
 
         for single_media in media_arr:
@@ -313,14 +311,13 @@ def get_media_from_user(chat_id, from_id):
                 media_group_tmp_arr.append(types.InputMediaPhoto(single_media[0]))
             else:
                 media_group_tmp_arr.append(types.InputMediaVideo(single_media[0]))
-            i=+1
+            i+=1
 
     # SEND MULTI MEDIA
     cursor.execute(
         "SELECT DISTINCT media_group_id FROM images WHERE to_id=%s AND from_id=%s AND media_group_id IS NOT NULL",(chat_id, from_id,))
     all_user_photo_groups = cursor.fetchall()
 
-    print("all_user_photo_groups: ", all_user_photo_groups)
     if len(all_user_photo_groups) != 0:
 
         for group_id in all_user_photo_groups:
@@ -340,7 +337,7 @@ def get_media_from_user(chat_id, from_id):
                     media_group_tmp_arr.append(types.InputMediaPhoto(single_media[0]))
                 else:
                     media_group_tmp_arr.append(types.InputMediaVideo(single_media[0]))
-                i=+1
+                i+=1
 
     media_group_data.insert(gp, media_group_tmp_arr)
     media_group_tmp_arr = []
