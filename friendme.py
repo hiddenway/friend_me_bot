@@ -223,7 +223,7 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
         print("Error in photo menu generator, all input param is None")
         return
 
-    media = get_media_from_user(chat_id, current_element)
+    media = get_media_from_user(chat_id, current_element)[0]
 
     if (isFirst is False):
         item_previous = types.InlineKeyboardButton(text='<<', callback_data='photo_m_element_id:'+str(previous_element)+':'+str(len(media)))
@@ -248,7 +248,7 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
 
     if callback == None:
         await bot.send_media_group(chat_id, media)
-        await bot.send_message(chat_id,f"<b>От: {sender_name}</b>",parse_mode='html', reply_markup=markup)
+        await bot.send_message(chat_id,f"<b>От: @{sender_name}</b>",parse_mode='html', reply_markup=markup)
     else:
 
         i = 0
@@ -262,7 +262,7 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
             i+=1
         print("ends")
         await bot.send_media_group(chat_id, media)
-        await bot.send_message(chat_id,f"<b>От:{sender_name}</b>",parse_mode='html', reply_markup=markup)
+        await bot.send_message(chat_id,f"<b>От: @{sender_name}</b>",parse_mode='html', reply_markup=markup)
 
 
 def get_media_from_user(chat_id, from_id):
@@ -300,11 +300,25 @@ def get_media_from_user(chat_id, from_id):
             cursor.execute("SELECT id_image, media_type FROM images WHERE media_group_id=%s",(group_id[0],))
             media_arr = cursor.fetchall()
 
+            i = 0
+            gp = 0
+            media_group_data = []
+            media_group_tmp_arr = []
+
             for single_media in media_arr:
+                if (i >= 15):
+                    i = 0
+                    gp+= 1
+
+                    media_group_data.insert(gp, media_group_tmp_arr)
+
+                    media_group_tmp_arr = []
+
                 if single_media[1] == "photo":
-                    media_group_data.append(types.InputMediaPhoto(single_media[0]))
+                    media_group_tmp_arr.insert(gp).append(types.InputMediaPhoto(single_media[0]))
                 else:
-                    media_group_data.append(types.InputMediaVideo(single_media[0]))
+                    media_group_tmp_arr.insert(gp).append(types.InputMediaVideo(single_media[0]))
+                i=+1
                 
     return media_group_data
 
