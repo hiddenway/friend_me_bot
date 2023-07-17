@@ -302,21 +302,17 @@ def get_media_from_user(chat_id, from_id):
     if len(media_arr) != 0:
 
         for single_media in media_arr:
-            if (i >= 15):
+            if (i >= 10):
                 i = 0
                 gp+= 1
 
                 media_group_data.insert(gp, media_group_tmp_arr)
                 media_group_tmp_arr = []
 
-                print("TMP ARR UPDATE: ", media_group_tmp_arr)
-
             if single_media[1] == "photo":
                 media_group_tmp_arr.append(types.InputMediaPhoto(single_media[0]))
-                print("append photo: ", media_group_tmp_arr)
             else:
                 media_group_tmp_arr.append(types.InputMediaVideo(single_media[0]))
-                print("append video: ", media_group_tmp_arr)
             i=+1
 
     # SEND MULTI MEDIA
@@ -333,20 +329,17 @@ def get_media_from_user(chat_id, from_id):
             media_arr = cursor.fetchall()
 
             for single_media in media_arr:
-                if (i >= 15):
+                if (i >= 10):
                     i = 0
                     gp+= 1
 
                     media_group_data.insert(gp, media_group_tmp_arr)
                     media_group_tmp_arr = []
 
-                    print("TMP ARR UPDATE: ", media_group_tmp_arr)
-
                 if single_media[1] == "photo":
                     media_group_tmp_arr.append(types.InputMediaPhoto(single_media[0]))
                 else:
                     media_group_tmp_arr.append(types.InputMediaVideo(single_media[0]))
-                    print("append video: ", media_group_tmp_arr)
                 i=+1
 
     media_group_data.insert(gp, media_group_tmp_arr)
