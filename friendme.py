@@ -225,6 +225,8 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
 
     media = get_media_from_user(chat_id, current_element)[0]
 
+    print("MEDIA INSIDE: ", media)
+
     if (isFirst is False):
         item_previous = types.InlineKeyboardButton(text='<<', callback_data='photo_m_element_id:'+str(previous_element)+':'+str(len(media)))
 
@@ -291,7 +293,6 @@ def get_media_from_user(chat_id, from_id):
                 gp+= 1
 
                 media_group_data.insert(gp, media_group_tmp_arr)
-
                 media_group_tmp_arr = []
 
             if single_media[1] == "photo":
@@ -300,7 +301,8 @@ def get_media_from_user(chat_id, from_id):
                 media_group_tmp_arr.append(types.InputMediaVideo(single_media[0]))
 
         media_group_data.insert(gp, media_group_tmp_arr)
-        
+        media_group_tmp_arr = []
+
     # SEND MULTI MEDIA
     cursor.execute(
         "SELECT DISTINCT media_group_id FROM images WHERE to_id=%s AND from_id=%s AND media_group_id IS NOT NULL",(chat_id, from_id,))
@@ -320,7 +322,6 @@ def get_media_from_user(chat_id, from_id):
                     gp+= 1
 
                     media_group_data.insert(gp, media_group_tmp_arr)
-
                     media_group_tmp_arr = []
 
                 if single_media[1] == "photo":
@@ -330,7 +331,8 @@ def get_media_from_user(chat_id, from_id):
                 i=+1
 
             media_group_data.insert(gp, media_group_tmp_arr)
-                
+            media_group_tmp_arr = []
+
     return media_group_data
 
 # Очистить БД
