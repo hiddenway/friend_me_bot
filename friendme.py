@@ -162,7 +162,7 @@ def validate_send_back(sender_id, receiver_id):
 
 
 async def generate_collection_senders(chat_id, from_id=None, callback=None, current_element_count=None, middle_level_count=None):
-    markup = types.InlineKeyboardMarkup(row_width=2)
+    markup = types.InlineKeyboardMarkup(row_width=3)
 
     cursor = connect.cursor()
 
