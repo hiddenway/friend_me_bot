@@ -592,18 +592,6 @@ async def photo(message):
 async def callback(callback):
     User = auth_user(callback.message.chat.id,callback.message.from_user.username or callback.message.from_user.first_name)
 
-    if User[3] is not None:
-        await only_photo(User)
-        return
-
-    if (callback.data.find(":") != -1):
-        command = callback.data.split(":")
-        if command[0] == "photo_m_element_id":
-            middle_level_count = None
-            if (len(command) == 4):
-                middle_level_count = command[3]
-            await generate_collection_senders(callback.message.chat.id, command[1], callback, current_element_count=command[2], middle_level_count=middle_level_count)
-
     if callback.data == 'cancel_send_photo':
 
         if User[3] is None:
@@ -618,6 +606,18 @@ async def callback(callback):
         await bot.send_message(callback.message.chat.id,'<b>Приветствуем тебя дорогой друг!👋</b>\nС помощью нашего бота ты можешь со всех своих друзей собрать совместные фото с тобой и вспомнить забытые и смешные моменты!\n\n<b>Как это работает:</b>\n1️⃣Нажмите кнопку в меню "Собрать фото и видео с друзей"\n2️⃣Выберите "Поделиться историей Instagram"\n3️⃣﻿﻿Добавьте себе историю в инстаграм как указано инструкции по кнопке\n4️⃣Все фото которые отправят друзья мы будем отображать в разделе "Моя галерея"\n\nКак только кто-то из твоих друзей отправит что-то по ссылке мы обязательно тебе об этом скажем😊', parse_mode='html')
 
         return
+
+    if User[3] is not None:
+        await only_photo(User)
+        return
+
+    if (callback.data.find(":") != -1):
+        command = callback.data.split(":")
+        if command[0] == "photo_m_element_id":
+            middle_level_count = None
+            if (len(command) == 4):
+                middle_level_count = command[3]
+            await generate_collection_senders(callback.message.chat.id, command[1], callback, current_element_count=command[2], middle_level_count=middle_level_count)
 
     ref_id = callback.message.chat.id
 
