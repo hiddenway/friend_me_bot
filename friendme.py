@@ -184,7 +184,7 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
     if from_id == None:
 
         isFirst = True
-        cursor.execute("SELECT DISTINCT from_id FROM images WHERE to_id = %s ORDER BY from_id DESC LIMIT 2", (chat_id, ))
+        cursor.execute("SELECT DISTINCT from_id FROM images WHERE to_id = %s ORDER BY from_id LIMIT 2", (chat_id, ))
         elements = cursor.fetchall()
 
         if (len(elements) == 2):
