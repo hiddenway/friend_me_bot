@@ -281,7 +281,7 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
 
 def get_media_from_user(chat_id, from_id):
     cursor = connect.cursor()
-
+    print("inside id:", chat_id)
     i = 0
     gp = 0
     media_group_data = []
