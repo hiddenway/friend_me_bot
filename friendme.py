@@ -259,6 +259,8 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
             markup.add(item_current)
         else:
             markup.add(item_previous, item_current)
+    else:
+        markup.add(item_previous, item_current, item_next)
 
     sender_name = get_user(current_element)[2]
 
