@@ -223,9 +223,11 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
         print("Error in photo menu generator, all input param is None")
         return
 
-    media = get_media_from_user(chat_id, current_element)[0]
+    media = get_media_from_user(chat_id, current_element)
 
     print("MEDIA INSIDE: ", media)
+
+    media = media[0]
 
     if (isFirst is False):
         item_previous = types.InlineKeyboardButton(text='<<', callback_data='photo_m_element_id:'+str(previous_element)+':'+str(len(media)))
