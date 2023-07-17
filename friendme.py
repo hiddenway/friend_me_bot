@@ -212,7 +212,6 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
                 previous_element = previous_element[0]
 
             if next_element == None:
-                print("next_element = ", next_element)
                 isLast = True
             else:
                 next_element = next_element[0]
@@ -225,9 +224,6 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
         return
 
     media = get_media_from_user(chat_id, current_element)
-
-    print("CURRENT ELEMENT: ", current_element)
-    print("MEDIA INSIDE: ", media)
 
     if middle_level_count != None:
         media = media[middle_level_count]
@@ -247,6 +243,10 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
             item_next = types.InlineKeyboardButton(text='>>', callback_data='photo_m_element_id:'+str(next_element)+':'+str(len(media)))
 
     item_current = types.InlineKeyboardButton('Жалоба ', callback_data='photo_m_element_id_report:'+str(current_element))
+
+
+    print("isLast = ", isLast)
+    print("item_next = ", item_next)
 
     if item_previous is None:
         if item_next is None:
