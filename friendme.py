@@ -195,15 +195,15 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
             current_element = elements[0][0]
 
     elif from_id != None:
-        cursor.execute("SELECT from_id FROM images WHERE from_id = %s AND to_id = %s ORDER BY from_id DESC LIMIT 1", (from_id, chat_id, ))
+        cursor.execute("SELECT from_id FROM images WHERE from_id = %s AND to_id = %s ORDER BY from_id LIMIT 1", (from_id, chat_id, ))
         current_element = cursor.fetchone()
 
         if current_element != None:
 
-            cursor.execute("SELECT from_id FROM images WHERE from_id < %s AND to_id = %s ORDER BY from_id DESC LIMIT 1", (from_id, chat_id, ))
+            cursor.execute("SELECT from_id FROM images WHERE from_id < %s AND to_id = %s ORDER BY from_id LIMIT 1", (from_id, chat_id, ))
             previous_element = cursor.fetchone()
 
-            cursor.execute("SELECT from_id FROM images WHERE from_id > %s AND to_id = %s ORDER BY from_id DESC LIMIT 1", (from_id, chat_id, ))
+            cursor.execute("SELECT from_id FROM images WHERE from_id > %s AND to_id = %s ORDER BY from_id LIMIT 1", (from_id, chat_id, ))
             next_element = cursor.fetchone()
 
             if previous_element == None:
