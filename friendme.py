@@ -322,6 +322,8 @@ def get_media_from_user(chat_id, from_id):
 
     if len(all_user_photo_groups) != 0:
 
+        print("HELX: ", media_group_tmp_arr)
+
         for group_id in all_user_photo_groups:
 
             cursor.execute("SELECT id_image, media_type FROM images WHERE media_group_id=%s",(group_id[0],))
