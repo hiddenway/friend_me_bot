@@ -34,7 +34,7 @@ services:
       - POSTGRES_HOST=10.5.0.5
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=friend_me_bot
+      - POSTGRES_DB=friend_me
     volumes:
       - ./:/root/app:cached
       - db_volume:/root/db
