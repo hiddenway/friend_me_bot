@@ -348,7 +348,7 @@ def get_media_from_user(chat_id, from_id):
 
             media_group_data.insert(gp, media_group_tmp_arr)
             media_group_tmp_arr = []
-
+    print("MDS", media_group_data)
     return media_group_data
 
 # Очистить БД
