@@ -313,6 +313,7 @@ def get_media_from_user(chat_id, from_id):
                 media_group_tmp_arr.append(types.InputMediaPhoto(single_media[0]))
             else:
                 media_group_tmp_arr.append(types.InputMediaVideo(single_media[0]))
+                print("append photo: ", media_group_tmp_arr)
             i=+1
 
     # SEND MULTI MEDIA
@@ -344,11 +345,12 @@ def get_media_from_user(chat_id, from_id):
                     media_group_tmp_arr.append(types.InputMediaPhoto(single_media[0]))
                 else:
                     media_group_tmp_arr.append(types.InputMediaVideo(single_media[0]))
+                    print("append video: ", media_group_tmp_arr)
                 i=+1
 
             media_group_data.insert(gp, media_group_tmp_arr)
             media_group_tmp_arr = []
-    print("MDS", media_group_data)
+
     return media_group_data
 
 # Очистить БД
