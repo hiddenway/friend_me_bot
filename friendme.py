@@ -244,9 +244,11 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
         else:
             markup.add(item_previous, item_current)
 
+    sender_name = get_user(current_element)[2]
+
     if callback == None:
         await bot.send_media_group(chat_id, media)
-        await bot.send_message(chat_id,f"<b>Photo ID:{current_element}</b>",parse_mode='html', reply_markup=markup)
+        await bot.send_message(chat_id,f"<b>От: {sender_name}</b>",parse_mode='html', reply_markup=markup)
     else:
 
         i = 0
@@ -260,7 +262,7 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
             i+=1
         print("ends")
         await bot.send_media_group(chat_id, media)
-        await bot.send_message(chat_id,f"<b>Photo ID:{current_element}</b>",parse_mode='html', reply_markup=markup)
+        await bot.send_message(chat_id,f"<b>От:{sender_name}</b>",parse_mode='html', reply_markup=markup)
 
 
 def get_media_from_user(chat_id, from_id):
