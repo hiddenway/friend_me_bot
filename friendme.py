@@ -249,14 +249,14 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
 
     if item_previous is None:
         if item_next is None:
-            markup.add(item_current)
+            markup.add('''item_current''')
         else:
-            markup.add(item_current, item_next)
+            markup.add('''item_current''', item_next)
     elif item_next is None:
         if item_previous is None:
-            markup.add(item_current)
+            markup.add('''item_current''')
         else:
-            markup.add(item_previous, item_current)
+            markup.add(item_previous, '''item_current''')
 
     sender_name = get_user(current_element)[2]
 
