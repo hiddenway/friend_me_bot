@@ -85,7 +85,8 @@ async def send_all_message(message: types.Message):
     if message.chat.id == admin_id:
         await bot.send_message(message.chat.id,'Starting')
         for i in users:
-            await bot.send_message(i[0],message.text[message.text.find(' '):],parse_mode='html')
+            await send_menu_message(i[0],message.text[message.text.find(' '):],parse_mode='html')
+            #await bot.send_message(i[0],message.text[message.text.find(' '):],parse_mode='html')
     else:
         await bot.send_message(message.chat.id,'Вы не являетесь администратором!')
 
@@ -713,7 +714,8 @@ async def callback(callback):
     elif callback.data == 'item_admin2':
         img = open('images/admin.jpg', 'rb')
         await bot.send_photo(callback.message.chat.id, img)
-    elif callback.data == 'photo_m_element_id_report':
+    elif callback.data == 'photo_m_element_id_report:':
+        print('repost active')
         await bot.send_message(callback.message.chat.id,'Вы отправили жалобу на данного пользователя🤬')
 
 async def error_command(chat_id):
