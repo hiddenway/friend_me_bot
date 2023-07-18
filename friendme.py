@@ -178,7 +178,7 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
     previous_element = None
     current_element = None
     next_element = None
-
+    level_count = 0
     item_previous = None
     item_next = None
 
@@ -226,8 +226,13 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
 
     media = get_media_from_user(chat_id, current_element)
 
+    if (len(media) > 1 and str(len(media) -1) != middle_level_count):
+        level_count = 1
+    else:
+        level_count = 0
+
     if middle_level_count != None:
-        media = media[middle_level_count]
+        media = media[int(middle_level_count)]
     else:
         media = media[0]
 
@@ -235,15 +240,16 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
         item_previous = types.InlineKeyboardButton(text='<<', callback_data='photo_m_element_id:'+str(previous_element)+':'+str(len(media)))
 
     if (isLast is False):
-        if middle_level_count != None:
-            middle_level_count+=1
 
-        if middle_level_count != None and len(media[middle_level_count]) != 0:
-            item_next = types.InlineKeyboardButton(text='>>', callback_data='photo_m_element_id:'+str(current_element)+':'+str(len(media))+':'+str(middle_level_count))
+        if middle_level_count != None and level_count != 0:
+            level_count = int(middle_level_count) + 1
+
+        if level_count >= 1:
+            item_next = types.InlineKeyboardButton(text='>>', callback_data='photo_m_element_id:'+str(current_element)+':'+str(len(media))+':'+str(level_count))
         else:
             item_next = types.InlineKeyboardButton(text='>>', callback_data='photo_m_element_id:'+str(next_element)+':'+str(len(media)))
 
-    item_current = types.InlineKeyboardButton('Жалоба ', callback_data='photo_m_element_id_report:'+str(current_element))
+    item_current = types.InlineKeyboardButton('Жалоба', callback_data='photo_m_element_id_report')
 
 
     print("isLast = ", isLast)
@@ -436,8 +442,11 @@ async def chat_message(message):
         markup.add(item1, item2, item3)
         await bot.send_message(message.chat.id,'<b>⤴️ Чтобы собрать совместные фотографии с друзей, вам нужно поделиться с ними уникальной ссылкой, выберите удобный для вас способ ниже:</b>',parse_mode='html', reply_markup=markup)
     elif message.text == '🪄 Удалить фон':
-        info_image = open('images/infoimg.png', 'rb')
-        await bot.send_photo(message.chat.id, info_image,caption='Добро пожаловать в нашем боте FriendMe, созданное специально для вас и ваших друзей!\n\nМы понимаем, что поделиться фотографиями с близкими людьми - это особенно приятно. Поэтому мы разработали этого бота, чтобы сделать процесс обмена фотографиями еще более удобным и приятным для вас.\n\nПоэтому что бы получить множество фотографий от ваших друзей ,родственников или же колег  с любого рода мероприятия . Вам придется легко сгенерировать реферальную ссылку и поделиться ей любым удобным способом\n\nМы нацелены на ваше удовлетворение, поэтому постоянно работаем над улучшением и совершенствованием нашего бота. Мы стремимся предоставить вам самый приятный и удобный опыт использования.\n\nСпасибо, что выбрали нашего бота, и дарите своим друзьям незабываемые моменты и радость фотографий. Мы надеемся, что оно станет вашим надежным спутником и поможет вам создавать прекрасные воспоминания с вашими близкими.')
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        item_remove = types.InlineKeyboardButton(text='Перейти',url='https://t.me/easy_remove_bg_bot')
+        markup.add(item_remove)
+        await bot.send_message(message.chat.id,'Для того, чтобы удалить фон с вашей фотографии, вам необходимо нажать на кнопку ниже ⤵️',reply_markup=markup)
+        #await bot.send_photo(message.chat.id, info_image,caption='Добро пожаловать в нашем боте FriendMe, созданное специально для вас и ваших друзей!\n\nМы понимаем, что поделиться фотографиями с близкими людьми - это особенно приятно. Поэтому мы разработали этого бота, чтобы сделать процесс обмена фотографиями еще более удобным и приятным для вас.\n\nПоэтому что бы получить множество фотографий от ваших друзей ,родственников или же колег  с любого рода мероприятия . Вам придется легко сгенерировать реферальную ссылку и поделиться ей любым удобным способом\n\nМы нацелены на ваше удовлетворение, поэтому постоянно работаем над улучшением и совершенствованием нашего бота. Мы стремимся предоставить вам самый приятный и удобный опыт использования.\n\nСпасибо, что выбрали нашего бота, и дарите своим друзьям незабываемые моменты и радость фотографий. Мы надеемся, что оно станет вашим надежным спутником и поможет вам создавать прекрасные воспоминания с вашими близкими.')
     else:
         await error_command(message.chat.id)
         return
@@ -714,9 +723,9 @@ async def callback(callback):
     elif callback.data == 'item_admin2':
         img = open('images/admin.jpg', 'rb')
         await bot.send_photo(callback.message.chat.id, img)
-    elif callback.data == 'photo_m_element_id_report:':
-        print('repost active')
-        await bot.send_message(callback.message.chat.id,'Вы отправили жалобу на данного пользователя🤬')
+    elif callback.data == 'photo_m_element_id_report':
+        await bot.send_message(callback.message.chat.id,'✅ Вы отправили жалобу на данного пользователя')
+
 
 async def error_command(chat_id):
     return await bot.send_message(chat_id, '<b>⛔ Произошла ошибка, данная команда недоступна!</b>', parse_mode='html')
