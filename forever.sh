@@ -1,1 +1,2 @@
-nodemon --exec python3 friendme.py
+docker compose up db -d
+docker compose up friend_me_bot --build -d

@@ -14,6 +14,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=friend_me
     ports:
       - '5432:5432'
     volumes:
@@ -41,6 +42,26 @@ services:
     networks:
       friend-me-network:
         ipv4_address: 10.5.0.6
+  friend_me_bot_dev:
+      build:
+        dockerfile: "Dockerfile"
+      ports:
+        - "8000:5000"
+      environment:
+        - BOT_TOKEN=6321894054:AAFF_wsZJW4JChXC5_iVM-7pXAXNyuo5Te4
+        - AMP_TOKEN=x
+        - bot_name=friend_me_bot
+        - isDocker=true
+        - POSTGRES_HOST=10.5.0.5
+        - POSTGRES_USER=postgres
+        - POSTGRES_PASSWORD=postgres
+        - POSTGRES_DB=friend_me
+      volumes:
+        - ./:/root/app:cached
+        - db_volume:/root/db
+      networks:
+        friend-me-network:
+          ipv4_address: 10.5.0.6
 
 volumes: 
     db_volume:

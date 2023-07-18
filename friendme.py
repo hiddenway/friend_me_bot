@@ -242,7 +242,7 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
         else:
             item_next = types.InlineKeyboardButton(text='>>', callback_data='photo_m_element_id:'+str(next_element)+':'+str(len(media)))
 
-    item_current = types.InlineKeyboardButton('Жалоба ', callback_data='photo_m_element_id_report:'+str(current_element))
+    item_current = types.InlineKeyboardButton('Жалоба', callback_data='photo_m_element_id_report')
 
 
     print("isLast = ", isLast)
@@ -713,6 +713,8 @@ async def callback(callback):
     elif callback.data == 'item_admin2':
         img = open('images/admin.jpg', 'rb')
         await bot.send_photo(callback.message.chat.id, img)
+    elif callback.data == 'photo_m_element_id_report':
+        await bot.send_message(callback.message.chat.id,'✅ Вы отправили жалобу на данного пользователя')
 
 async def error_command(chat_id):
     return await bot.send_message(chat_id, '<b>⛔ Произошла ошибка, данная команда недоступна!</b>', parse_mode='html')
