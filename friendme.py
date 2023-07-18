@@ -228,7 +228,7 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
     level_count = len(media)
 
     if middle_level_count != None:
-        level_count = level_count - middle_level_count
+        level_count = level_count - int(middle_level_count)
         media = media[middle_level_count]
     else:
         media = media[0]
