@@ -177,7 +177,7 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
     previous_element = None
     current_element = None
     next_element = None
-
+    level_count = 0
     item_previous = None
     item_next = None
 
@@ -241,7 +241,7 @@ async def generate_collection_senders(chat_id, from_id=None, callback=None, curr
         if middle_level_count != None:
             level_count = int(middle_level_count) + 1
 
-        if level_count > 1:
+        if level_count >= 1:
             item_next = types.InlineKeyboardButton(text='>>', callback_data='photo_m_element_id:'+str(current_element)+':'+str(len(media))+':'+str(level_count))
         else:
             item_next = types.InlineKeyboardButton(text='>>', callback_data='photo_m_element_id:'+str(next_element)+':'+str(len(media)))
