@@ -23,6 +23,3 @@ jobs:
     - name: Deploy FriendMe Bot Container
       run: |
         docker compose up db -d
-    - name: Deploy bg_cut Bot Container
-      run: |
-        docker compose up bg_cut --build -d
