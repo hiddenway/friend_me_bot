@@ -85,7 +85,7 @@ async def send_all_message(message: types.Message):
     if message.chat.id == admin_id:
         await bot.send_message(message.chat.id,'Starting')
         for i in users:
-            await send_menu_message(i[0],message.text[message.text.find(' '):],parse_mode='html')
+            await send_menu_message(i[0],message.text[message.text.find(' '):])
             #await bot.send_message(i[0],message.text[message.text.find(' '):],parse_mode='html')
     else:
         await bot.send_message(message.chat.id,'Вы не являетесь администратором!')
