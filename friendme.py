@@ -85,11 +85,12 @@ async def send_all_message(message: types.Message):
         await bot.send_message(message.chat.id,'Starting')
         for i in users:
             try:
-                print("Send to: ", i[0])
-                amplitude_track("send_mailling", i[0], { "status": "ok" })
+                print("Send to: ", str(i[0]))
+                amplitude_track("send_mailling", str(i[0]), { "status": "ok" })
                 await send_menu_message(i[0],message.text[message.text.find(' '):])
             except Exception as error:
-                amplitude_track("user_block", i[0], { "blocked": "true" })
+                print("Blocked bot: ", str(i[0]))
+                amplitude_track("user_block", str(i[0]), { "blocked": "true" })
             #await bot.send_message(i[0],message.text[message.text.find(' '):],parse_mode='html')
     else:
         await bot.send_message(message.chat.id,'Вы не являетесь администратором!')
