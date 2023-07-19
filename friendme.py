@@ -80,12 +80,16 @@ init_bot()
 async def send_all_message(message: types.Message):
     cursor = connect.cursor()
     cursor.execute("SELECT tg_id FROM users;")
-    users =cursor.fetchall()
-    print(users)
+    users = cursor.fetchall()
     if message.chat.id == admin_id:
         await bot.send_message(message.chat.id,'Starting')
         for i in users:
-            await send_menu_message(i[0],message.text[message.text.find(' '):])
+            try:
+                print("Send to: ", i[0])
+                amplitude_track("send_mailling", i[0], { "status": "ok" })
+                await send_menu_message(i[0],message.text[message.text.find(' '):])
+            except Exception as error:
+                amplitude_track("user_block", i[0], { "blocked": "true" })
             #await bot.send_message(i[0],message.text[message.text.find(' '):],parse_mode='html')
     else:
         await bot.send_message(message.chat.id,'Вы не являетесь администратором!')
