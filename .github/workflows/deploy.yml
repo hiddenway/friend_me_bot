@@ -23,3 +23,6 @@ jobs:
     - name: Deploy FriendMe Bot Container
       run: |
         docker compose up db -d
+    - name: Deploy FriendMe Bot Container
+      run: |
+        docker compose up friend_me_bot --build -d
