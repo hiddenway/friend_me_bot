@@ -48,7 +48,7 @@ services:
     ports:
       - "8000:5000"
     environment:
-      - BOT_TOKEN=5905830940:AAH3l7fpyVdcc0tSbTaoq0qo8hg8jGYHyLo
+      - BOT_TOKEN=6199788488:AAFQt9ndMV1AL5lAuxnA0WZ5v3lUtAtgB9A
       - AMP_TOKEN=ef58e9e7cdcfabb095f61798d8529d30
       - bot_name=friend_me_bot
       - isDocker=true
