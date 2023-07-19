@@ -81,16 +81,12 @@ async def send_all_message(message: types.Message):
     cursor = connect.cursor()
     cursor.execute("SELECT tg_id FROM users;")
     users = cursor.fetchall()
-    if message.chat.id == admin_id:
+    if message.chat.id == admin_id or message.chat.id == admin_id2:
         await bot.send_message(message.chat.id,'Starting')
         for i in users:
-            try:
-                print("Send to: ", str(i[0]))
-                amplitude_track("send_mailling", str(i[0]), { "status": "ok" })
-                await send_menu_message(i[0],message.text[message.text.find(' '):])
-            except Exception as error:
-                print("Blocked bot: ", str(i[0]))
-                amplitude_track("user_block", str(i[0]), { "blocked": "true" })
+            print("Send to: ", str(i[0]))
+            amplitude_track("send_mailling", str(i[0]), { "status": "ok" })
+            await send_menu_message(i[0],message.text[message.text.find(' '):])
             #await bot.send_message(i[0],message.text[message.text.find(' '):],parse_mode='html')
     else:
         await bot.send_message(message.chat.id,'Вы не являетесь администратором!')
@@ -754,7 +750,11 @@ async def send_menu_message(chat_id, message):
     #start_button4 = types.KeyboardButton('🪄 Удалить фон')
     markup.add(start_button1, start_button3, start_button2)
 
-    await bot.send_message(chat_id, message, parse_mode='html', reply_markup=markup)
+    try:
+        await bot.send_message(chat_id, message, parse_mode='html', reply_markup=markup)
+    except Exception:
+        print("Blocked bot: ", str(chat_id))
+        amplitude_track("user_block", str(chat_id), { "blocked": "true" })
 
 
 asyncio.run(bot.polling(none_stop=True))
