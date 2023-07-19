@@ -22,6 +22,26 @@ services:
     networks:
       friend-me-network:
         ipv4_address: 10.5.0.5
+  bg_cut:
+    build:
+      dockerfile: "Dockerfile_bgcut"
+    ports:
+      - "8000:5000"
+    environment:
+      - BOT_TOKEN=6321894054:AAFF_wsZJW4JChXC5_iVM-7pXAXNyuo5Te4
+      - AMP_TOKEN=ef58e9e7cdcfabb095f61798d8529d30
+      - bot_name=friend_me_bot
+      - isDocker=true
+      - POSTGRES_HOST=10.5.0.5
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=friend_me
+    volumes:
+      - ./:/root/app:cached
+      - db_volume:/root/db
+    networks:
+      friend-me-network:
+        ipv4_address: 10.5.0.6
   friend_me_bot:
     build:
       dockerfile: "Dockerfile"
